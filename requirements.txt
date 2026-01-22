@@ -1,0 +1,9 @@
+Flask
+Flask-SQLAlchemy
+Flask-Login
+Flask-mail
+Werkzeug
+python-dotenv
+Pillow
+email-validator
+gunicorn

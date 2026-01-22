@@ -1,0 +1,2318 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head> 
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<!-- Primary Meta Tags -->
+<title>VLD - Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="title" content="VLD - Dashboard">
+<meta name="author" content="PRMSC">
+<meta name="description" content="Volt Pro is a Premium Bootstrap 5 Admin Dashboard featuring over 800 components, 10+ plugins and 20 example pages using Vanilla JS.">
+<meta name="keywords" content="bootstrap 5, bootstrap, bootstrap 5 admin dashboard, bootstrap 5 dashboard, bootstrap 5 charts, bootstrap 5 calendar, bootstrap 5 datepicker, bootstrap 5 tables, bootstrap 5 datatable, vanilla js datatable, themesberg, themesberg dashboard, themesberg admin dashboard" />
+<link rel="canonical" href="https://themesberg.com/product/admin-dashboard/volt-premium-bootstrap-5-dashboard">
+
+<!-- Favicon -->
+<link rel="apple-touch-icon" sizes="120x120" href="{{ url_for('static', filename='assets/img/favicon/apple-touch-icon.png') }}">
+<link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='assets/img/favicon/favicon-32x32.png') }}">
+<link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='assets/img/favicon/favicon-16x16.png') }}">
+<link rel="manifest" href="{{ url_for('static', filename='assets/img/favicon/site.webmanifest') }}">
+<link rel="mask-icon" href="{{ url_for('static', filename='assets/img/favicon/safari-pinned-tab.svg') }}" color="#ffffff">
+<meta name="msapplication-TileColor" content="#ffffff">
+<meta name="theme-color" content="#ffffff">
+
+<!-- Sweet Alert -->
+<link type="text/css" href="{{ url_for('static', filename='js/sweetalert2/dist/sweetalert2.min.css') }}" rel="stylesheet">
+
+<!-- Notyf -->
+<link type="text/css" href="{{ url_for('static', filename='js/notyf/notyf.min.css') }}" rel="stylesheet">
+
+<!-- Volt CSS -->
+<link type="text/css" href="{{ url_for('static', filename='css/volt.css') }}" rel="stylesheet">
+
+<!-- FontAwesome 5 -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+<!-- NOTICE: You can use the _analytics.html partial to include production code specific code & trackers -->
+ <!-- Leaflet Core -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<!-- Leaflet MarkerCluster -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+<!-- Leaflet Draw -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+
+<!-- Export Tools -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+
+</head>
+
+<body>
+        <nav class="navbar navbar-dark navbar-theme-primary px-4 col-12 d-lg-none">
+    <a class="navbar-brand me-lg-5" href="../../index.html">
+        <img class="navbar-brand-dark" src="../../assets/img/brand/light.svg" alt="Volt logo" /> <img class="navbar-brand-light" src="../../assets/img/brand/dark.svg" alt="Volt logo" />
+    </a>
+    <div class="d-flex align-items-center">
+        <button class="navbar-toggler d-lg-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+    </div>
+</nav>
+
+        <nav id="sidebarMenu" class="sidebar d-lg-block bg-gray-800 text-white collapse" data-simplebar>
+  <div class="sidebar-inner px-4 pt-3">
+    <div class="user-card d-flex d-md-none align-items-center justify-content-between justify-content-md-center pb-4">
+      <div class="d-flex align-items-center">
+        <div class="avatar-lg me-4">
+          {% if current_user.profile_picture %}
+            <img src="{{ url_for('static', filename=current_user.profile_picture) }}" class="card-img-top rounded-circle border-white" alt="{{ current_user.name }}">
+          {% else %}
+            <img src="{{ url_for('static', filename='assets/img/team/profile-picture-3.jpg') }}" class="card-img-top rounded-circle border-white" alt="{{ current_user.name }}">
+          {% endif %}
+        </div>
+        <div class="d-block">
+          <h2 class="h5 mb-3">Hi, {{ current_user.name }}</h2>
+          <a href="{{ url_for('logout') }}" class="btn btn-secondary btn-sm d-inline-flex align-items-center">
+            <svg class="icon icon-xxs me-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+            Sign Out
+          </a>
+        </div>
+      </div>
+      <div class="collapse-close d-md-none">
+        <a href="#sidebarMenu" data-bs-toggle="collapse"
+            data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="true"
+            aria-label="Toggle navigation">
+            <svg class="icon icon-xs" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+          </a>
+      </div>
+    </div>
+    <ul class="nav flex-column pt-3 pt-md-0">
+      <li class="nav-item">
+        <a href="../../index.html" class="nav-link d-flex align-items-center">
+          <!-- <span class="sidebar-icon">
+            <img src="../../assets/img/brand/light.svg" height="20" width="20" alt="Volt Logo">
+          </span> -->
+          <span class="mt-1 ms-1 sidebar-text">VLD System</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="{{ url_for('dashboard') }}" class="nav-link">
+          <span class="sidebar-icon">
+            <svg class="icon icon-xs me-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z"></path><path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z"></path></svg>
+          </span> 
+          <span class="sidebar-text">Dashboard</span>
+        </a>
+      </li>
+      
+      {% if current_user.role == 'EDCS' %}
+      <li class="nav-item">
+        <a href="{{ url_for('edcs_dashboard') }}" class="nav-link">
+          <span class="sidebar-icon">
+            <svg class="icon icon-xs me-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"></path></svg>
+          </span>
+          <span class="sidebar-text">EDCS</span>
+        </a>
+      </li>
+      {% elif current_user.role == 'BCCO' %}
+      <li class="nav-item">
+        <a href="{{ url_for('bcc_dashboard') }}" class="nav-link">
+          <span class="sidebar-icon">
+            <svg class="icon icon-xs me-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"></path></svg>
+          </span>
+          <span class="sidebar-text">BCC Officer</span>
+        </a>
+      </li>
+      {% elif current_user.role == 'DM' %}
+      <li class="nav-item">
+        <a href="{{ url_for('dm_dashboard') }}" class="nav-link">
+          <span class="sidebar-icon">
+            <svg class="icon icon-xs me-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"></path></svg>
+          </span>
+          <span class="sidebar-text">District Manager</span>
+        </a>
+      </li>
+      {% elif current_user.role == 'TM' %}
+      <li class="nav-item">
+        <a href="{{ url_for('tm_dashboard') }}" class="nav-link">
+          <span class="sidebar-icon">
+            <svg class="icon icon-xs me-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"></path></svg>
+          </span>
+          <span class="sidebar-text">Tehsil Manager</span>
+        </a>
+      </li>
+      {% elif current_user.role == 'BCCSP' %}
+      <li class="nav-item">
+        <a href="{{ url_for('bccsp_dashboard') }}" class="nav-link">
+          <span class="sidebar-icon">
+            <svg class="icon icon-xs me-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"></path></svg>
+          </span>
+          <span class="sidebar-text">BCC Specialist</span>
+        </a>
+      </li>
+      {% endif %}
+    </ul>
+  </div>
+</nav>
+    
+
+
+
+
+
+
+        <main class="content">
+            <nav class="navbar navbar-top navbar-expand navbar-dashboard navbar-dark ps-0 pe-2 pb-0">
+  <div class="container-fluid px-0">
+    <div class="d-flex justify-content-between w-100" id="navbarSupportedContent">
+      <div class="d-flex align-items-center">
+        <!-- Dashboard Title -->
+        <h5 class="mb-0 text-dark fw-bold">
+          <i class="fas fa-chart-line me-2 text-primary"></i>Punjab VLD Dashboard
+        </h5>
+      </div>
+      <!-- Navbar links -->
+      <ul class="navbar-nav align-items-center">
+        <li class="nav-item dropdown">
+          <a class="nav-link text-dark notification-bell dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false">
+            <i class="fas fa-bell fa-lg text-primary"></i>
+            <span class="badge bg-danger badge-pill position-absolute top-0 start-100 translate-middle" style="font-size: 0.65rem;">3</span>
+          </a>
+          <div class="dropdown-menu dropdown-menu-lg dropdown-menu-end mt-2 py-0 shadow-lg" style="min-width: 380px; border-radius: 12px;">
+            <div class="list-group list-group-flush">
+              <div class="text-center fw-bold border-bottom py-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px 12px 0 0;">
+                <i class="fas fa-bell me-2"></i>Notifications
+              </div>
+
+              <a href="#" class="list-group-item list-group-item-action border-bottom py-3" style="transition: all 0.2s;">
+                <div class="d-flex align-items-start">
+                  <div class="flex-shrink-0">
+                    <div class="avatar-circle bg-success text-white d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; border-radius: 50%;">
+                      <i class="fas fa-check-circle fa-lg"></i>
+                    </div>
+                  </div>
+                  <div class="flex-grow-1 ms-3">
+                    <div class="d-flex justify-content-between align-items-start">
+                      <h6 class="mb-1 fw-bold">Case Approved</h6>
+                      <small class="text-success">2 mins ago</small>
+                    </div>
+                    <p class="mb-0 small text-muted">Case #VLD-2024-001 has been approved by DM</p>
+                  </div>
+                </div>
+              </a>
+
+              <a href="#" class="list-group-item list-group-item-action border-bottom py-3" style="transition: all 0.2s;">
+                <div class="d-flex align-items-start">
+                  <div class="flex-shrink-0">
+                    <div class="avatar-circle bg-warning text-white d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; border-radius: 50%;">
+                      <i class="fas fa-exclamation-triangle fa-lg"></i>
+                    </div>
+                  </div>
+                  <div class="flex-grow-1 ms-3">
+                    <div class="d-flex justify-content-between align-items-start">
+                      <h6 class="mb-1 fw-bold">Pending Review</h6>
+                      <small class="text-warning">1 hour ago</small>
+                    </div>
+                    <p class="mb-0 small text-muted">5 cases are pending your review</p>
+                  </div>
+                </div>
+              </a>
+
+              <a href="#" class="list-group-item list-group-item-action border-bottom py-3" style="transition: all 0.2s;">
+                <div class="d-flex align-items-start">
+                  <div class="flex-shrink-0">
+                    <div class="avatar-circle bg-info text-white d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; border-radius: 50%;">
+                      <i class="fas fa-info-circle fa-lg"></i>
+                    </div>
+                  </div>
+                  <div class="flex-grow-1 ms-3">
+                    <div class="d-flex justify-content-between align-items-start">
+                      <h6 class="mb-1 fw-bold">System Update</h6>
+                      <small class="text-info">3 hours ago</small>
+                    </div>
+                    <p class="mb-0 small text-muted">Dashboard has been updated with new features</p>
+                  </div>
+                </div>
+              </a>
+
+              <a href="#" class="text-center fw-bold py-3 d-block border-top" style="background: #f8f9fa; border-radius: 0 0 12px 12px; transition: all 0.2s;">
+                <i class="fas fa-eye me-1 text-primary"></i>View All Notifications
+              </a>
+            </div>
+          </div>
+        </li>
+        <li class="nav-item dropdown ms-lg-3">
+          <a class="nav-link dropdown-toggle pt-1 px-0" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <div class="media d-flex align-items-center">
+              {% if current_user.profile_picture %}
+                <img class="avatar rounded-circle" alt="{{ current_user.name }}" src="{{ url_for('static', filename=current_user.profile_picture) }}">
+              {% else %}
+                <img class="avatar rounded-circle" alt="{{ current_user.name }}" src="{{ url_for('static', filename='assets/img/team/profile-picture-3.jpg') }}">
+              {% endif %}
+              <div class="media-body ms-2 text-dark align-items-center d-none d-lg-block">
+                <span class="mb-0 font-small fw-bold text-gray-900">{{ current_user.name }}</span>
+              </div>
+            </div>
+          </a>
+          <div class="dropdown-menu dashboard-dropdown dropdown-menu-end mt-2 py-1">
+            <a class="dropdown-item d-flex align-items-center" href="#">
+              <svg class="dropdown-icon text-gray-400 me-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd"></path></svg>
+              My Profile
+            </a>
+            <a class="dropdown-item d-flex align-items-center" href="#">
+              <svg class="dropdown-icon text-gray-400 me-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"></path></svg>
+              Settings
+            </a>
+            <div role="separator" class="dropdown-divider my-1"></div>
+            <a class="dropdown-item d-flex align-items-center" href="{{ url_for('logout') }}">
+              <svg class="dropdown-icon text-danger me-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+              Logout
+            </a>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+            <div class="py-4">
+                <!-- Removed New Task dropdown - not needed for VLD Dashboard -->
+            </div>
+            <div class="row mb-3">
+    <div class="col-md-2">
+        <label for="landTypeFilter" class="form-label fw-bold">Select Land Type</label>
+        <select id="landTypeFilter" class="form-select">
+            <option value="all">All Land Types</option>
+            {% for land_type, count in stats.land_type_counts.items() %}
+            <option value="{{ land_type }}">{{ land_type }} ({{ count }})</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-2">
+        <label for="phaseFilter" class="form-label fw-bold">Select Phase</label>
+        <select id="phaseFilter" class="form-select">
+            <option value="all">All Phases</option>
+            <option value="Phase I">Phase I</option>
+            <option value="Phase II">Phase II</option>
+            <option value="Phase III">Phase III</option>
+            <option value="Phase IV">Phase IV</option>
+            <option value="Phase V">Phase V</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <label for="districtFilter" class="form-label fw-bold">Select District</label>
+        <select id="districtFilter" class="form-select">
+            <option value="all">All Districts</option>
+            {% for district in stats.districts %}
+            <option value="{{ district }}">{{ district }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-2">
+        <label for="tehsilFilter" class="form-label fw-bold">Select Tehsil</label>
+        <select id="tehsilFilter" class="form-select">
+            <option value="all">All Tehsils</option>
+            {% for tehsil in stats.tehsils %}
+            <option value="{{ tehsil }}">{{ tehsil }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-2">
+        <label for="villageFilter" class="form-label fw-bold">Select Village</label>
+        <select id="villageFilter" class="form-select">
+            <option value="all">All Villages</option>
+            {% for village in stats.villages %}
+            <option value="{{ village }}">{{ village }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-2">
+        <label for="landUsePurposeFilter" class="form-label fw-bold">Land Use Purpose</label>
+        <select id="landUsePurposeFilter" class="form-select">
+            <option value="all">All Purposes</option>
+            {% for intervention, count in stats.intervention_counts.items() %}
+            <option value="{{ intervention }}">{{ intervention }} ({{ count }})</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+<script>
+    const filters = ['landTypeFilter', 'phaseFilter', 'districtFilter', 'tehsilFilter', 'villageFilter', 'landUsePurposeFilter'];
+    
+    filters.forEach(id => {
+        document.getElementById(id).addEventListener('change', function () {
+            const landType = document.getElementById('landTypeFilter').value;
+            const phase = document.getElementById('phaseFilter').value;
+            const district = document.getElementById('districtFilter').value;
+            const tehsil = document.getElementById('tehsilFilter').value;
+            const village = document.getElementById('villageFilter').value;
+            const landUsePurpose = document.getElementById('landUsePurposeFilter').value;
+
+            // Call function to refresh dashboard (cards + graphs)
+            updateDashboard(landType, phase, district, tehsil, village, landUsePurpose);
+        });
+    });
+
+    function updateDashboard(landType, phase, district, tehsil, village, landUsePurpose) {
+        console.log("Selected:", landType, phase, district, tehsil, village, landUsePurpose);
+
+        // Show loading state
+        const cards = document.querySelectorAll('.card');
+        cards.forEach(card => card.style.opacity = '0.7');
+
+        // For now, just log the filters
+        // TODO: Implement AJAX call to filter data
+        alert(`Filters Applied:\nLand Type: ${landType}\nPhase: ${phase}\nDistrict: ${district}\nTehsil: ${tehsil}\nVillage: ${village}\nPurpose: ${landUsePurpose}`);
+
+        // Reset opacity
+        cards.forEach(card => card.style.opacity = '1');
+    }
+</script>
+
+            <div class="row">
+                <div class="col-12 mb-4">
+ <div class="col-12 mb-4">
+  <div class="card shadow">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <div>
+        <h5 class="mb-1 fw-bold">Punjab Voluntary Land Donation Map</h5>
+        <small class="text-muted">Filter by district or union council, and select land using drawing tools.</small>
+      </div>
+      <div>
+        <button class="btn btn-outline-success btn-sm" id="exportMapBtn">Export Map</button>
+      </div>
+    </div>
+    <div class="card-body p-2">
+      <div class="row mb-3 px-2">
+        <div class="col-md-4">
+          <select id="mapDistrictFilter" class="form-select">
+            <option value="all">All Districts</option>
+            {% for district in stats.districts %}
+            <option value="{{ district }}">{{ district }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4">
+          <select id="mapTehsilFilter" class="form-select">
+            <option value="all">All Tehsils</option>
+            {% for tehsil in stats.tehsils %}
+            <option value="{{ tehsil }}">{{ tehsil }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4">
+          <select id="mapVillageFilter" class="form-select">
+            <option value="all">All Villages</option>
+            {% for village in stats.villages %}
+            <option value="{{ village }}">{{ village }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <!-- Map and Sidebar Layout: 70% Map + 30% Sidebar -->
+      <div class="row">
+        <!-- Map Section (70%) -->
+        <div class="col-lg-9">
+          <div style="position: relative;">
+            <div id="vld-map" style="width: 100%; height: 650px; border: 1px solid #ccc; border-radius: 6px;"></div>
+            <!-- Tehsil Details Popup Panel -->
+            <div id="tehsilDetailsPanel" style="display: none; position: absolute; top: 20px; right: 20px; width: 320px; background: white; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); z-index: 1000; max-height: 500px; overflow-y: auto;">
+            </div>
+          </div>
+        </div>
+
+        <!-- Hierarchy Sidebar (30%) -->
+        <div class="col-lg-3">
+          <div class="card border-0 shadow" style="height: 650px; overflow-y: auto;">
+            <div class="card-header bg-gradient-primary text-white">
+              <h5 class="mb-0 fw-bold">📊 Location Hierarchy</h5>
+              <small>Punjab VLD Coverage</small>
+            </div>
+            <div class="card-body p-0">
+              <div id="locationHierarchy" class="accordion accordion-flush">
+                <!-- Will be populated by JavaScript -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Tehsil Details Panel Styles */
+  #tehsilDetailsPanel {
+    animation: slideIn 0.3s ease-out;
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  .tehsil-stat {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    padding: 10px;
+    border-radius: 8px;
+    margin: 8px 0;
+  }
+
+  /* Hierarchy Sidebar Styles */
+  .hierarchy-region {
+    border-left: 4px solid #667eea;
+    background: linear-gradient(135deg, #f5f7fa 0%, #e8eaf6 100%);
+  }
+
+  .hierarchy-district {
+    border-left: 4px solid #f5576c;
+    background: #fff9f9;
+  }
+
+  .hierarchy-tehsil {
+    border-left: 4px solid #4caf50;
+    background: #f1f8f4;
+  }
+
+  .hierarchy-village {
+    border-left: 3px solid #ff9800;
+    background: #fff8f0;
+    font-size: 0.85rem;
+  }
+
+  .hierarchy-item {
+    padding: 8px 12px;
+    margin: 4px 0;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .hierarchy-item:hover {
+    transform: translateX(5px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  /* Fix accordion arrow icons */
+  #locationHierarchy .accordion-button::after {
+    background-image: none !important;
+    content: '\f078' !important;
+    font-family: 'Font Awesome 5 Free' !important;
+    font-weight: 900 !important;
+    color: inherit !important;
+    width: auto !important;
+    height: auto !important;
+    background-size: auto !important;
+    transition: transform 0.2s ease-in-out !important;
+  }
+
+  #locationHierarchy .accordion-button:not(.collapsed)::after {
+    transform: rotate(180deg) !important;
+  }
+
+  /* Notification Styles */
+  .notification-bell {
+    position: relative;
+  }
+
+  .list-group-item-action:hover {
+    background: linear-gradient(135deg, #f0f4ff 0%, #e8eaf6 100%) !important;
+    transform: translateX(5px);
+  }
+
+  .avatar-circle {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  .hierarchy-stats {
+    display: flex;
+    gap: 15px;
+    margin-top: 5px;
+    font-size: 0.8rem;
+  }
+
+  .hierarchy-stat-badge {
+    background: white;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+  }
+
+  .bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  }
+
+  /* Modern Table Styles */
+  .modern-table {
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+  }
+
+  .modern-table thead th {
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+
+  .modern-table tbody tr {
+    background: white;
+  }
+
+  .modern-table tbody tr:nth-child(even) {
+    background: #f8f9fa;
+  }
+
+  .modern-table tbody tr:hover {
+    background: linear-gradient(135deg, #f0f4ff 0%, #e8eaf6 100%) !important;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+    transform: translateY(-2px);
+  }
+
+  .modern-table tbody td {
+    font-size: 0.9rem;
+    color: #2c3e50;
+    vertical-align: middle;
+  }
+
+  /* DataTables Custom Styling */
+  .dataTables_wrapper .dataTables_length select,
+  .dataTables_wrapper .dataTables_filter input {
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 6px 12px;
+    transition: all 0.3s;
+  }
+
+  .dataTables_wrapper .dataTables_length select:focus,
+  .dataTables_wrapper .dataTables_filter input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    outline: none;
+  }
+
+  .dataTables_wrapper .dataTables_paginate .paginate_button {
+    border-radius: 6px !important;
+    margin: 0 3px;
+    transition: all 0.2s;
+  }
+
+  .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    border: none !important;
+    color: white !important;
+  }
+
+  .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    background: #667eea !important;
+    border: none !important;
+    color: white !important;
+  }
+</style>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    // Village data with all locations - FROM BACKEND
+    const villageData = {{ stats.village_data | tojson | safe }};
+
+    // BACKUP: If backend data is empty, use hardcoded data
+    const villageDataBackup = {
+      "South-I": {
+        "Bahawalnagar": {
+          "Bahawalnagar": [
+            {name: "RATI RAMPURA", code: "33333", lat: "29.66339302", lng: "73.27627563"},
+            {name: "KAMAL MOHD", code: "33289", lat: "29.76139832", lng: "73.17256165"},
+            {name: "CHAK GHULAM MUHAMMAD", code: "33367", lat: "29.92119026", lng: "73.19380951"},
+            {name: "NANAK CHAND", code: "33307", lat: "29.89110947", lng: "73.05485535"},
+            {name: "MANOHAR GARH", code: "33376", lat: "29.88731575", lng: "73.1785202"},
+            {name: "TOBA ALLAHYAR", code: "33383", lat: "29.8591423", lng: "73.31604767"},
+            {name: "MURAD KHARAL", code: "33364", lat: "29.85290337", lng: "73.11303711"},
+            {name: "ANOKH SINGH", code: "33247", lat: "30.04998398", lng: "73.33756256"},
+            {name: "CHAK MUHAMMAD ZAMAN", code: "33377", lat: "29.9564476", lng: "73.14221954"},
+            {name: "MOMIN ABAD", code: "33356", lat: "29.9570446", lng: "73.0617981"},
+            {name: "PHOGANWALA", code: "33360", lat: "29.95088196", lng: "73.06731415"},
+            {name: "CHAK SADIQ NAGAR", code: "33175", lat: "29.90852356", lng: "72.97138214"},
+            {name: "KAKKU BODLA", code: "33235", lat: "30.08294868", lng: "73.21486664"},
+            {name: "ATAR SINGH SANI", code: "33280", lat: "30.00065041", lng: "73.34818268"},
+            {name: "MOHD YAR CHISHTI", code: "33368", lat: "29.90116501", lng: "73.15867615"},
+            {name: "KHETRAN WALA", code: "33308", lat: "29.71038055", lng: "73.15775299"},
+            {name: "QAMARUDIN BODLA", code: "33233", lat: "30.04791451", lng: "73.22874451"},
+            {name: "KAHANPURA", code: "33278", lat: "29.91546822", lng: "73.29209137"},
+            {name: "RAMZAN LANGAH", code: "33220", lat: "30.08884621", lng: "73.26938629"},
+            {name: "QAMAR0-UD-DIN", code: "33223", lat: "30.02606583", lng: "73.21582031"},
+            {name: "JANDWALA KHURD", code: "33294", lat: "29.78215981", lng: "73.11348724"},
+            {name: "GANGA SINGH", code: "33284", lat: "29.88035965", lng: "73.09680939"}
+          ]
+        }
+      },
+      "South-II": {
+        "Lodhran": {
+          "Karor Pacca": [
+            {name: "ALI PUR KANJUN", code: "26661", lat: "29.67061615", lng: "71.8780365"},
+            {name: "CHOKI RANGO KHAN", code: "26662", lat: "29.72247696", lng: "71.88756561"},
+            {name: "GULHAR", code: "26557", lat: "29.7348175", lng: "71.89356232"},
+            {name: "JHOK AHIR", code: "26249", lat: "29.50398254", lng: "71.88619232"},
+            {name: "MOHAMMAD PUR", code: "26230", lat: "29.70200348", lng: "71.88573456"},
+            {name: "CHOKI SOBHA KHAN", code: "26552", lat: "29.74905205", lng: "71.92613983"},
+            {name: "PYWAGNAN", code: "26236", lat: "29.50541878", lng: "71.82138824"},
+            {name: "NOOR SHAH", code: "26653", lat: "29.66440964", lng: "71.76231384"},
+            {name: "30/M", code: "26416", lat: "29.67547989", lng: "71.72536469"},
+            {name: "HASSA JOYA", code: "26568", lat: "29.57269287", lng: "72.09596252"},
+            {name: "DHORAH MAHAR", code: "26549", lat: "29.7567482", lng: "71.93684387"}
+          ]
+        },
+        "Multan": {
+          "Shuja Abad": [
+            {name: "MARI NOON", code: "26708", lat: "29.77522087", lng: "71.42314911"},
+            {name: "JALAL PUR KHAKHI", code: "26723", lat: "29.76013947", lng: "71.21868134"},
+            {name: "BASTI MITHU SHARQI", code: "36502", lat: "29.84164047", lng: "71.29672241"},
+            {name: "GURDEZ PUR", code: "26716", lat: "29.80830765", lng: "71.25707245"},
+            {name: "OBAWRHA SHUMALI", code: "26734", lat: "29.71147537", lng: "71.302948"},
+            {name: "MAQEEM PUR", code: "26698", lat: "29.78413773", lng: "71.35295105"},
+            {name: "KULUCH PUR", code: "26712", lat: "29.73161125", lng: "71.33837128"},
+            {name: "WAHI NOON", code: "26692", lat: "29.84453011", lng: "71.42159271"},
+            {name: "KHARA", code: "26721", lat: "29.74036407", lng: "71.25557709"},
+            {name: "BASTI MITHU GHARBI", code: "26699", lat: "29.82444572", lng: "71.33898926"},
+            {name: "THATHA GHULWAN SHUMALI", code: "26732", lat: "29.69717979", lng: "71.34399414"},
+            {name: "JHAKAR", code: "26694", lat: "29.78223038", lng: "71.44061279"}
+          ]
+        },
+        "Muzaffargarh": {
+          "Alipur": [
+            {name: "YAKEWALI", code: "31806", lat: "29.43502617", lng: "70.94895935"},
+            {name: "AZMAT PUR", code: "31800", lat: "29.33360672", lng: "70.9749527"},
+            {name: "GHAUS PUR", code: "31734", lat: "29.31291199", lng: "70.87371063"},
+            {name: "BET NABI SHAH", code: "31798", lat: "29.3533802", lng: "70.91960144"},
+            {name: "MADD SOHANARA SHAH", code: "31911", lat: "29.37289429", lng: "70.63371277"},
+            {name: "PIRO WALI", code: "31826", lat: "29.45939445", lng: "70.90297699"},
+            {name: "BET MULLAN WALI", code: "31793", lat: "29.3240242", lng: "70.93354034"},
+            {name: "NAU ABAD", code: "31872", lat: "29.34475708", lng: "70.70800781"},
+            {name: "KHIRORAH FAZAL MOHD", code: "31821", lat: "29.43404961", lng: "71.01494598"},
+            {name: "WALWAT", code: "31786", lat: "29.21809387", lng: "70.61386108"}
+          ]
+        }
+      },
+      "South-III": {
+        "D.G.Khan": {
+          "Taunsa": [
+            {name: "SANJAR SHAHI", code: "29861", lat: "30.48601532", lng: "70.72777557"},
+            {name: "KALUWALA", code: "29712", lat: "31.22917747", lng: "70.74665833"},
+            {name: "BASTI PIR", code: "29841", lat: "30.52420616", lng: "70.77693176"},
+            {name: "JHOK MANU", code: "29867", lat: "30.54255486", lng: "70.62223053"},
+            {name: "CHOLANI", code: "29894", lat: "30.54818535", lng: "70.72003937"},
+            {name: "BOHAR", code: "29871", lat: "31.17069435", lng: "70.5936203"},
+            {name: "RIND WALA", code: "29779", lat: "30.93849564", lng: "70.59538269"},
+            {name: "MITHE WALI", code: "29734", lat: "31.20769501", lng: "70.52633667"},
+            {name: "LAKHU", code: "29746", lat: "30.82009888", lng: "70.73555756"},
+            {name: "KABIR SHAH", code: "29766", lat: "30.89525604", lng: "70.72166443"},
+            {name: "SONTRA", code: "29750", lat: "30.75263023", lng: "70.65705109"},
+            {name: "LAL SHAH", code: "29888", lat: "30.73312378", lng: "70.74421692"},
+            {name: "BUZDAR", code: "29720", lat: "30.76307106", lng: "70.53288269"}
+          ]
+        },
+        "Rahim Yar Khan": {
+          "Liaqatpur": [
+            {name: "CHAK NO.45/ABBASIA", code: "34983", lat: "28.91923332", lng: "71.00676727"},
+            {name: "CHAK NO.5/ABBASIA", code: "35031", lat: "28.98629189", lng: "70.98072052"},
+            {name: "CHAK NO.30/ABBASIA", code: "34979", lat: "28.9252739", lng: "70.98233795"},
+            {name: "CHAK NO.25/ABBASIA", code: "35038", lat: "28.97833061", lng: "71.01305389"},
+            {name: "CHAK NO.17/ABBASIA", code: "35037", lat: "28.97742462", lng: "70.99539948"},
+            {name: "CHAK NO.29/ABBASIA", code: "34978", lat: "28.93990517", lng: "71.00422668"},
+            {name: "CHAK NO.44/ABBASIA", code: "35000", lat: "28.90553474", lng: "70.98226929"},
+            {name: "UNNARRAN", code: "34973", lat: "29.03556633", lng: "70.717659"},
+            {name: "KOTLA DARIGH", code: "34855", lat: "29.05330086", lng: "70.88162994"},
+            {name: "ZAFAR ABAD", code: "34945", lat: "28.91549492", lng: "70.67959595"},
+            {name: "GALANI", code: "34932", lat: "28.93846703", lng: "70.62186432"},
+            {name: "BAHAN WALA", code: "34851", lat: "28.87074852", lng: "70.87110901"},
+            {name: "CHAK NO.67/ABBASIA", code: "34989", lat: "28.80917931", lng: "70.87308502"},
+            {name: "LAL SHAH", code: "34939", lat: "28.99964905", lng: "70.66465759"},
+            {name: "RAQBA PIR MOHSIN SHAH", code: "34913", lat: "29.16436195", lng: "70.89350128"},
+            {name: "DODA NAICH", code: "34879", lat: "28.96088791", lng: "70.7819519"},
+            {name: "GHOUS ABAD", code: "34952", lat: "28.94283485", lng: "70.66769409"},
+            {name: "CHAK NO.1 ABBASIA", code: "35061", lat: "29.06189156", lng: "71.0226593"},
+            {name: "CHAK NO.141/ABBASIA", code: "35025", lat: "28.89869881", lng: "71.04517365"}
+          ]
+        },
+        "Rajanpur": {
+          "Rojhan": [
+            {name: "SALEEM ABAD", code: "32371", lat: "28.79619598", lng: "70.07885742"},
+            {name: "CHAK RANWANI", code: "32335", lat: "28.50892067", lng: "69.90827179"},
+            {name: "MUTFARQ MAZARI", code: "32369", lat: "28.76545525", lng: "70.0586319"},
+            {name: "DERA DILDAR", code: "32358", lat: "28.71504021", lng: "70.01274109"},
+            {name: "KOTLA HUSSAN SHAH", code: "32411", lat: "28.87141228", lng: "70.18093109"},
+            {name: "KOCHA MIANWALI NO.1", code: "32368", lat: "28.5709362", lng: "70.03663635"},
+            {name: "CHAK UMRANI", code: "32336", lat: "28.55447006", lng: "69.91217804"},
+            {name: "KOTLA HAMAL MUSHTARQA MAZARI", code: "32418", lat: "29.03167534", lng: "70.01346588"}
+          ]
+        }
+      },
+      "North": {
+        "Mianwali": {
+          "Isa Khel": [
+            {name: "KACHH TUNDAR KHEL", code: "25323", lat: "33.00159836", lng: "71.50523376"},
+            {name: "KHUDOZAI", code: "25329", lat: "32.90605927", lng: "71.43955231"},
+            {name: "KOTKI", code: "25330", lat: "32.95565414", lng: "71.40391541"},
+            {name: "GANDA", code: "25333", lat: "32.84594727", lng: "71.4824295"},
+            {name: "KOT CHANDANA", code: "25328", lat: "32.95479202", lng: "71.47368622"},
+            {name: "TOLA MANGLI", code: "25326", lat: "32.97796631", lng: "71.44259644"},
+            {name: "PACCAKIS UMER KHAN", code: "25341", lat: "32.71718979", lng: "71.27375031"},
+            {name: "KARANDI", code: "25306", lat: "32.89575958", lng: "71.16688538"},
+            {name: "VANJARI", code: "25321", lat: "32.91029739", lng: "71.24053192"},
+            {name: "PACCA ATTOCK PANIYALA", code: "25289", lat: "32.59204102", lng: "71.27751923"}
+          ]
+        }
+      },
+      "Centre-I": {
+        "Bhakkar": {
+          "Darya Khan": [
+            {name: "CHAK NO.17/T.D.A", code: "25447", lat: "31.77101517", lng: "71.18208313"},
+            {name: "SANDI", code: "25405", lat: "31.7753315", lng: "71.04830933"},
+            {name: "LUNDI NASHEB", code: "25409", lat: "31.83719826", lng: "71.08499146"},
+            {name: "MURANI SHUMALI", code: "25406", lat: "31.76167488", lng: "71.03330231"},
+            {name: "ANGRA DAGGAR", code: "25627", lat: "31.83391953", lng: "71.12277222"},
+            {name: "HAJI HUSSAIN SHAH DAGAR", code: "25631", lat: "31.9311924", lng: "71.21439362"},
+            {name: "SURANI DAGGAR", code: "25432", lat: "31.76600647", lng: "71.10552216"},
+            {name: "SURANI NASHEB", code: "25415", lat: "31.768013", lng: "71.07801056"},
+            {name: "CHAK NO.52-M.L", code: "25426", lat: "31.75600815", lng: "71.30093384"}
+          ]
+        },
+        "Chiniot": {
+          "Bhowana": [
+            {name: "TAJA BEERWALA", code: "23776", lat: "31.59325981", lng: "72.65531158"},
+            {name: "CHAK NO 190", code: "23803", lat: "31.50672722", lng: "72.67922974"},
+            {name: "CHAK 221", code: "23837", lat: "31.50691414", lng: "72.70083618"},
+            {name: "CHAK 199", code: "23854", lat: "31.42183304", lng: "72.772995"},
+            {name: "THATTA JHANAB", code: "23792", lat: "31.58235741", lng: "72.69851685"},
+            {name: "BARKHURDAR", code: "23794", lat: "31.60167885", lng: "72.69709778"},
+            {name: "CHAK 226", code: "23816", lat: "31.44102097", lng: "72.65831757"},
+            {name: "SULEMAN", code: "23629", lat: "31.49151993", lng: "72.55583191"},
+            {name: "BILHARKE", code: "23769", lat: "31.64439011", lng: "72.74494171"},
+            {name: "HID", code: "23790", lat: "31.6080513", lng: "72.79855347"},
+            {name: "CHAK 248", code: "23825", lat: "31.38063431", lng: "72.72648621"},
+            {name: "CHAK 192", code: "23805", lat: "31.51522064", lng: "72.66120911"},
+            {name: "KAMOKE", code: "23772", lat: "31.62464142", lng: "72.88532257"}
+          ]
+        },
+        "Jhang": {
+          "Ahmad Pur Sial": [
+            {name: "SEWA", code: "23518", lat: "30.81372261", lng: "71.84414673"},
+            {name: "CHAK NO.11/3-L", code: "23522", lat: "30.7982235", lng: "71.81572723"},
+            {name: "HAZARAT SULTAN BAHU", code: "23498", lat: "30.80641556", lng: "71.86233521"},
+            {name: "FATEH PUR PIRTI", code: "23332", lat: "30.96380424", lng: "71.97954559"},
+            {name: "GUDARA", code: "23520", lat: "30.87901878", lng: "71.85855103"},
+            {name: "JAIWAIN", code: "23502", lat: "30.72973251", lng: "71.78889465"},
+            {name: "DAULUANA SHARQI", code: "23358", lat: "30.94002533", lng: "71.88761139"},
+            {name: "BAKHU SARGANA", code: "23544", lat: "30.60009766", lng: "71.74493408"},
+            {name: "CHAK NO.2/2-L", code: "23505", lat: "30.87892342", lng: "71.90278625"},
+            {name: "CHAK NO.3/3-R", code: "23561", lat: "30.72080612", lng: "71.75202179"}
+          ]
+        }
+      },
+      "Centre-II": {
+        "Pakpattan": {
+          "Pakpattan": [
+            {name: "KARAM PUR BHATTI", code: "28075", lat: "30.32689857", lng: "73.45210266"},
+            {name: "CHAK NO.57-S.P.", code: "27980", lat: "30.45089722", lng: "73.31311035"},
+            {name: "BABLANA", code: "28171", lat: "30.46024132", lng: "73.37024689"},
+            {name: "SOCHAN", code: "27952", lat: "30.2751503", lng: "73.31179047"},
+            {name: "KILLI", code: "27945", lat: "30.2773304", lng: "73.36994934"},
+            {name: "CHAK AHMAD SHER", code: "28096", lat: "30.51816368", lng: "73.3892746"},
+            {name: "KALE WAL", code: "28051", lat: "30.44582367", lng: "73.52979279"},
+            {name: "ARIF ABAD", code: "27949", lat: "30.31208801", lng: "73.30822754"},
+            {name: "DEDAR SINGH", code: "28181", lat: "30.3439064", lng: "73.59247589"},
+            {name: "JIWANA MEHTAM", code: "28192", lat: "30.33948898", lng: "73.56202698"},
+            {name: "DHAKKU CHISHTI", code: "27934", lat: "30.31657219", lng: "73.34315491"},
+            {name: "CHAK NO.93/D.", code: "28013", lat: "30.50232124", lng: "73.24982452"},
+            {name: "CHAK NO.32/S.P.", code: "27991", lat: "30.38111496", lng: "73.30928802"},
+            {name: "CHAK ELAHYA WALA", code: "28166", lat: "30.21905327", lng: "73.27581024"},
+            {name: "JATTU WAL", code: "27944", lat: "30.29696274", lng: "73.37992096"},
+            {name: "CHAK NO.47 S.P.", code: "28052", lat: "30.44582367", lng: "73.55269623"},
+            {name: "SOHARA", code: "27936", lat: "30.28860092", lng: "73.47647095"},
+            {name: "CHAK SARDUL SINGH", code: "27964", lat: "30.46269989", lng: "73.32724762"},
+            {name: "CHAK NO.22.S.P.", code: "28067", lat: "30.43542099", lng: "73.45689392"},
+            {name: "FARID PUR DOGRAN", code: "27972", lat: "30.39821434", lng: "73.37680817"},
+            {name: "CHAK NO.66.D.", code: "28109", lat: "30.49047279", lng: "73.39910889"},
+            {name: "GHURI", code: "28094", lat: "30.51001549", lng: "73.34540558"},
+            {name: "CHAK NO.34/S.P", code: "27961", lat: "30.39634705", lng: "73.2820816"},
+            {name: "CHAK NO.86/D", code: "28035", lat: "30.52363586", lng: "73.18489838"}
+          ]
+        }
+      }
+    };
+
+    // Initialize map centered on Pakistan with bounds
+    const pakistanBounds = [
+      [23.5, 60.5],  // Southwest coordinates
+      [37.5, 77.5]   // Northeast coordinates
+    ];
+
+    const map = L.map('vld-map', {
+      maxBounds: pakistanBounds,
+      maxBoundsViscosity: 1.0,
+      minZoom: 6,
+      maxZoom: 18
+    }).setView([30.3753, 69.3451], 6);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Custom marker icons
+    const villageIcon = L.divIcon({
+      className: 'custom-village-marker',
+      html: '<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;"><span style="color: white; font-size: 12px; font-weight: bold;">📍</span></div>',
+      iconSize: [24, 24],
+      iconAnchor: [12, 12],
+      popupAnchor: [0, -12]
+    });
+
+    const tehsilIcon = L.divIcon({
+      className: 'custom-tehsil-marker',
+      html: '<div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); width: 40px; height: 40px; border-radius: 50%; border: 4px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center;"><span style="color: white; font-size: 20px;">🏛️</span></div>',
+      iconSize: [40, 40],
+      iconAnchor: [20, 20],
+      popupAnchor: [0, -20]
+    });
+
+    const markers = [];
+    let markerClusterGroup = L.markerClusterGroup({
+      maxClusterRadius: 50,
+      spiderfyOnMaxZoom: true,
+      showCoverageOnHover: false,
+      zoomToBoundsOnClick: true
+    });
+
+    function renderMarkers() {
+      // Clear existing markers
+      markerClusterGroup.clearLayers();
+      markers.length = 0;
+
+      // Add village markers from the data
+      Object.keys(villageData).forEach(region => {
+        Object.keys(villageData[region]).forEach(district => {
+          Object.keys(villageData[region][district]).forEach(tehsil => {
+            const villages = villageData[region][district][tehsil];
+
+            villages.forEach(village => {
+              const lat = parseFloat(village.lat);
+              const lng = parseFloat(village.lng);
+
+              if (!isNaN(lat) && !isNaN(lng)) {
+                const popupContent = `
+                  <div style="min-width: 220px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 10px; margin: -10px -10px 10px -10px; border-radius: 4px 4px 0 0;">
+                      <h6 style="margin: 0; font-size: 15px; font-weight: 600;">📍 ${village.name}</h6>
+                    </div>
+                    <div style="padding: 5px 0;">
+                      <p style="margin: 5px 0; font-size: 13px; line-height: 1.6;">
+                        <strong style="color: #2c3e50;">Tehsil:</strong> <span style="color: #34495e;">${tehsil}</span><br/>
+                        <strong style="color: #2c3e50;">District:</strong> <span style="color: #34495e;">${district}</span><br/>
+                        <strong style="color: #2c3e50;">Village Code:</strong> <span style="color: #34495e;">${village.code}</span><br/>
+                        <strong style="color: #2c3e50;">Region:</strong> <span style="color: #34495e;">${region}</span>
+                      </p>
+                    </div>
+                  </div>
+                `;
+
+                const marker = L.marker([lat, lng], { icon: villageIcon })
+                  .bindPopup(popupContent);
+
+                markerClusterGroup.addLayer(marker);
+                markers.push(marker);
+              }
+            });
+          });
+        });
+      });
+
+      map.addLayer(markerClusterGroup);
+    }
+
+    // Initial Render
+    renderMarkers();
+
+    // Add Tehsil-level markers for ALL tehsils from villageData
+    const tehsilMarkersArray = [];
+    const tehsilCaseCounts = {{ stats.tehsil_summary | tojson | safe }};
+
+    // Calculate average lat/lng for each tehsil from villageData
+    const tehsilLocations = {};
+    Object.keys(villageData).forEach(region => {
+      Object.keys(villageData[region]).forEach(district => {
+        Object.keys(villageData[region][district]).forEach(tehsil => {
+          const villages = villageData[region][district][tehsil];
+          let totalLat = 0, totalLng = 0, count = 0;
+
+          villages.forEach(village => {
+            const lat = parseFloat(village.lat);
+            const lng = parseFloat(village.lng);
+            if (!isNaN(lat) && !isNaN(lng)) {
+              totalLat += lat;
+              totalLng += lng;
+              count++;
+            }
+          });
+
+          if (count > 0) {
+            tehsilLocations[tehsil] = {
+              lat: totalLat / count,
+              lng: totalLng / count,
+              district: district,
+              region: region,
+              case_count: tehsilCaseCounts[tehsil] || 0
+            };
+          }
+        });
+      });
+    });
+
+    // Create tehsil markers for ALL tehsils
+    Object.keys(tehsilLocations).forEach(tehsilName => {
+      const tehsil = tehsilLocations[tehsilName];
+
+      const tehsilMarker = L.circleMarker([tehsil.lat, tehsil.lng], {
+        radius: 18,
+        fillColor: '#f5576c',
+        color: '#fff',
+        weight: 4,
+        opacity: 1,
+        fillOpacity: 0.85
+      });
+
+      // Store tehsil name for filtering
+      tehsilMarker.tehsilName = tehsilName;
+      tehsilMarker.districtName = tehsil.district;
+
+      tehsilMarker.on('click', function() {
+        showTehsilDetailsPanel({
+          tehsil: tehsilName,
+          district: tehsil.district,
+          case_count: tehsil.case_count,
+          total_land: 0
+        });
+        map.setView([tehsil.lat, tehsil.lng], 11);
+      });
+
+      tehsilMarker.bindTooltip(`<strong>🏛️ ${tehsilName}</strong><br/>${tehsil.case_count} cases`, {
+        permanent: false,
+        direction: 'top',
+        className: 'tehsil-tooltip'
+      });
+
+      tehsilMarker.addTo(map);
+      tehsilMarkersArray.push(tehsilMarker);
+    });
+
+    // Tehsil Details Panel Functions
+    function showTehsilDetailsPanel(tehsil) {
+      const panel = document.getElementById('tehsilDetailsPanel');
+
+      panel.innerHTML = `
+        <div class="p-4">
+          <button class="btn-close float-end" onclick="closeTehsilPanel()"></button>
+          <h5 class="fw-bold mb-3" style="color: #667eea;">🏛️ ${tehsil.tehsil}</h5>
+          <hr/>
+          <div class="tehsil-stat">
+            <small class="text-muted">District</small>
+            <h6 class="fw-bold mb-0">${tehsil.district}</h6>
+          </div>
+          <div class="tehsil-stat">
+            <small class="text-muted">Total Cases</small>
+            <h6 class="fw-bold mb-0">${tehsil.case_count}</h6>
+          </div>
+          <div class="tehsil-stat">
+            <small class="text-muted">Land Donated</small>
+            <h6 class="fw-bold mb-0">${tehsil.total_land} Marlas</h6>
+          </div>
+          <button class="btn btn-primary btn-sm w-100 mt-3" onclick="filterByTehsil('${tehsil.tehsil}')">
+            <i class="fas fa-filter me-2"></i>View Villages in ${tehsil.tehsil}
+          </button>
+        </div>
+      `;
+
+      panel.style.display = 'block';
+    }
+
+    window.closeTehsilPanel = function() {
+      document.getElementById('tehsilDetailsPanel').style.display = 'none';
+    };
+
+    window.filterByTehsil = function(tehsilName) {
+      const mapTehsilFilter = document.getElementById('mapTehsilFilter');
+      if (mapTehsilFilter) {
+        mapTehsilFilter.value = tehsilName;
+        applyMapFilters();
+      }
+      closeTehsilPanel();
+    };
+
+    // Map Filter Functionality
+    const mapDistrictFilter = document.getElementById('mapDistrictFilter');
+    const mapTehsilFilter = document.getElementById('mapTehsilFilter');
+    const mapVillageFilter = document.getElementById('mapVillageFilter');
+
+    function applyMapFilters() {
+      const selectedDistrict = mapDistrictFilter ? mapDistrictFilter.value : 'all';
+      const selectedTehsil = mapTehsilFilter ? mapTehsilFilter.value : 'all';
+      const selectedVillage = mapVillageFilter ? mapVillageFilter.value : 'all';
+
+      // Clear existing village markers
+      markerClusterGroup.clearLayers();
+
+      // Filter and show/hide tehsil markers
+      tehsilMarkersArray.forEach(marker => {
+        const shouldShow = (selectedDistrict === 'all' || marker.districtName === selectedDistrict) &&
+                          (selectedTehsil === 'all' || marker.tehsilName === selectedTehsil);
+
+        if (shouldShow) {
+          if (!map.hasLayer(marker)) {
+            marker.addTo(map);
+          }
+        } else {
+          if (map.hasLayer(marker)) {
+            map.removeLayer(marker);
+          }
+        }
+      });
+
+      // Filter and add village markers
+      Object.keys(villageData).forEach(region => {
+        Object.keys(villageData[region]).forEach(district => {
+          if (selectedDistrict !== 'all' && district !== selectedDistrict) return;
+
+          Object.keys(villageData[region][district]).forEach(tehsil => {
+            if (selectedTehsil !== 'all' && tehsil !== selectedTehsil) return;
+
+            const villages = villageData[region][district][tehsil];
+
+            villages.forEach(village => {
+              if (selectedVillage !== 'all' && village.name !== selectedVillage) return;
+
+              const lat = parseFloat(village.lat);
+              const lng = parseFloat(village.lng);
+
+              if (!isNaN(lat) && !isNaN(lng)) {
+                const popupContent = `
+                  <div style="min-width: 220px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 10px; margin: -10px -10px 10px -10px; border-radius: 4px 4px 0 0;">
+                      <h6 style="margin: 0; font-size: 15px; font-weight: 600;">📍 ${village.name}</h6>
+                    </div>
+                    <div style="padding: 5px 0;">
+                      <p style="margin: 5px 0; font-size: 13px; line-height: 1.6;">
+                        <strong style="color: #2c3e50;">Tehsil:</strong> <span style="color: #34495e;">${tehsil}</span><br/>
+                        <strong style="color: #2c3e50;">District:</strong> <span style="color: #34495e;">${district}</span><br/>
+                        <strong style="color: #2c3e50;">Village Code:</strong> <span style="color: #34495e;">${village.code}</span><br/>
+                        <strong style="color: #2c3e50;">Region:</strong> <span style="color: #34495e;">${region}</span>
+                      </p>
+                    </div>
+                  </div>
+                `;
+
+                const marker = L.marker([lat, lng], { icon: villageIcon })
+                  .bindPopup(popupContent);
+                markerClusterGroup.addLayer(marker);
+              }
+            });
+          });
+        });
+      });
+
+      // Show notification
+      if (selectedDistrict !== 'all' || selectedTehsil !== 'all' || selectedVillage !== 'all') {
+        console.log(`Filters applied: District=${selectedDistrict}, Tehsil=${selectedTehsil}, Village=${selectedVillage}`);
+      }
+    }
+
+    if (mapDistrictFilter) mapDistrictFilter.addEventListener('change', applyMapFilters);
+    if (mapTehsilFilter) mapTehsilFilter.addEventListener('change', applyMapFilters);
+    if (mapVillageFilter) mapVillageFilter.addEventListener('change', applyMapFilters);
+
+    // Drawing Controls
+    const drawnItems = new L.FeatureGroup().addTo(map);
+    const drawControl = new L.Control.Draw({
+      draw: {
+        marker: false,
+        polyline: false,
+        circle: false,
+        circlemarker: false,
+        rectangle: true,
+        polygon: true
+      },
+      edit: { featureGroup: drawnItems }
+    });
+    map.addControl(drawControl);
+
+    map.on(L.Draw.Event.CREATED, function (e) {
+      const layer = e.layer;
+      drawnItems.addLayer(layer);
+    });
+
+    // Populate Location Hierarchy Sidebar
+    function populateHierarchy() {
+      const hierarchyContainer = document.getElementById('locationHierarchy');
+      const tehsilCaseCounts = {{ stats.tehsil_summary | tojson | safe }};
+      let hierarchyHTML = '';
+      let regionIndex = 0;
+
+      Object.keys(villageData).forEach(region => {
+        const districts = villageData[region];
+        const districtCount = Object.keys(districts).length;
+
+        hierarchyHTML += `
+          <div class="accordion-item">
+            <h2 class="accordion-header" id="heading-region-${regionIndex}">
+              <button class="accordion-button collapsed hierarchy-region" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-region-${regionIndex}">
+                <div class="w-100">
+                  <strong><i class="fas fa-globe-asia text-primary me-2"></i>${region}</strong>
+                  <div class="hierarchy-stats">
+                    <span class="hierarchy-stat-badge text-primary">${districtCount} Districts</span>
+                  </div>
+                </div>
+              </button>
+            </h2>
+            <div id="collapse-region-${regionIndex}" class="accordion-collapse collapse" data-bs-parent="#locationHierarchy">
+              <div class="accordion-body p-2">
+        `;
+
+        let districtIndex = 0;
+        Object.keys(districts).forEach(district => {
+          const tehsils = districts[district];
+          const tehsilCount = Object.keys(tehsils).length;
+
+          hierarchyHTML += `
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="heading-district-${regionIndex}-${districtIndex}">
+                <button class="accordion-button collapsed hierarchy-district" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-district-${regionIndex}-${districtIndex}">
+                  <div class="w-100">
+                    <strong><i class="fas fa-map-marked-alt text-danger me-2"></i>${district}</strong>
+                    <div class="hierarchy-stats">
+                      <span class="hierarchy-stat-badge text-danger">${tehsilCount} Tehsils</span>
+                    </div>
+                  </div>
+                </button>
+              </h2>
+              <div id="collapse-district-${regionIndex}-${districtIndex}" class="accordion-collapse collapse">
+                <div class="accordion-body p-2">
+          `;
+
+          let tehsilIndex = 0;
+          Object.keys(tehsils).forEach(tehsil => {
+            const villages = tehsils[tehsil];
+            const villageCount = villages.length;
+            const caseCount = tehsilCaseCounts[tehsil] || 0;
+
+            hierarchyHTML += `
+              <div class="accordion-item">
+                <h2 class="accordion-header" id="heading-tehsil-${regionIndex}-${districtIndex}-${tehsilIndex}">
+                  <button class="accordion-button collapsed hierarchy-tehsil" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-tehsil-${regionIndex}-${districtIndex}-${tehsilIndex}">
+                    <div class="w-100">
+                      <strong><i class="fas fa-building text-success me-2"></i>${tehsil}</strong>
+                      <div class="hierarchy-stats">
+                        <span class="hierarchy-stat-badge text-success">${villageCount} Villages</span>
+                        <span class="hierarchy-stat-badge text-info">${caseCount} Cases</span>
+                      </div>
+                    </div>
+                  </button>
+                </h2>
+                <div id="collapse-tehsil-${regionIndex}-${districtIndex}-${tehsilIndex}" class="accordion-collapse collapse">
+                  <div class="accordion-body p-1">
+            `;
+
+            villages.forEach(village => {
+              hierarchyHTML += `
+                <div class="hierarchy-item hierarchy-village" onclick="zoomToVillage(${village.lat}, ${village.lng}, '${village.name}')">
+                  <i class="fas fa-map-marker-alt text-warning me-2"></i><strong>${village.name}</strong>
+                  <div class="hierarchy-stats">
+                    <span class="hierarchy-stat-badge" style="font-size: 0.7rem;">Code: ${village.code}</span>
+                  </div>
+                </div>
+              `;
+            });
+
+            hierarchyHTML += `
+                  </div>
+                </div>
+              </div>
+            `;
+            tehsilIndex++;
+          });
+
+          hierarchyHTML += `
+                </div>
+              </div>
+            </div>
+          `;
+          districtIndex++;
+        });
+
+        hierarchyHTML += `
+              </div>
+            </div>
+          </div>
+        `;
+        regionIndex++;
+      });
+
+      hierarchyContainer.innerHTML = hierarchyHTML;
+    }
+
+    // Function to zoom to village when clicked in hierarchy
+    window.zoomToVillage = function(lat, lng, name) {
+      map.setView([lat, lng], 14);
+      L.popup()
+        .setLatLng([lat, lng])
+        .setContent(`<strong>📍 ${name}</strong>`)
+        .openOn(map);
+    };
+
+    // Populate hierarchy on load
+    populateHierarchy();
+
+    // Export Button - FIXED to capture map properly
+    document.getElementById("exportMapBtn").addEventListener("click", () => {
+      // Force map to invalidate size before capture
+      map.invalidateSize();
+
+      // Wait a bit for map to render, then capture
+      setTimeout(() => {
+        html2canvas(document.getElementById("vld-map"), {
+          useCORS: true,
+          allowTaint: true,
+          logging: false,
+          scale: 2  // Higher quality
+        }).then(canvas => {
+          const imgData = canvas.toDataURL("image/png");
+          const { jsPDF } = window.jspdf;
+          const pdf = new jsPDF('landscape');  // Landscape for better map view
+          const imgWidth = 280;
+          const imgHeight = (canvas.height * imgWidth) / canvas.width;
+          pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+          pdf.save("Punjab_VLD_Map.pdf");
+        }).catch(err => {
+          console.error('Map export error:', err);
+          alert('Error exporting map. Please try again.');
+        });
+      }, 500);
+    });
+  });
+</script>
+<div class="row">
+    <!-- Card 1 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
+<div class="col-md-4 mb-4">
+    <div class="card border-0 shadow h-100">
+        <div class="card-body">
+            <div class="d-flex align-items-center">
+                <div class="icon-shape icon-shape-primary rounded me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                    <i class="bi bi-pin-map-fill fs-4 text-white"></i>
+                </div>
+                <div>
+                    <h2 class="h6 text-gray-400 mb-0">Total Land Options Collected</h2>
+                    <h3 class="fw-extrabold mb-1">{{ stats.total_land_options }}</h3>
+                    <small class="text-gray-500 d-block">Based on field surveys and community nominations</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+    <!-- Card 2 -->
+    <div class="col-md-4 mb-4">
+    <div class="card border-0 shadow h-100">
+        <div class="card-body">
+            <div class="d-flex align-items-center">
+                <div class="icon-shape icon-shape-secondary rounded me-3">
+                    <svg class="icon" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 1.75c-1.24 0-2.42.41-3.39 1.16a6.03 6.03 0 00-1.61 2.03 6.07 6.07 0 00-.5 2.36c0 1.19.35 2.3.95 3.21l4.48 6.69c.13.19.41.19.54 0l4.48-6.69a6.04 6.04 0 00.95-3.21c0-.84-.18-1.66-.5-2.36a6.02 6.02 0 00-1.61-2.03A6.14 6.14 0 0012 1.75zm0 3.25a.75.75 0 01.53 1.28L10.53 9.28a.75.75 0 01-1.06 0L8.22 8.03a.75.75 0 011.06-1.06l.75.75 2.19-2.19A.75.75 0 0112 5z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="h6 text-gray-400 mb-0">Verified & Endorsed Options</h2>
+                    <h3 class="fw-extrabold mb-1">{{ stats.verified_options }}</h3>
+                    <small class="text-gray-500 d-block">Passed technical, revenue, and social due diligence</small>
+                    <!-- <div class="text-info small">Data Source: <strong>Form 3 & 5</strong></div> -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+    <!-- Card 3 -->
+    <div class="col-md-4 mb-4">
+    <div class="card border-0 shadow h-100">
+        <div class="card-body">
+            <div class="d-flex align-items-center">
+                <div class="icon-shape icon-shape-tertiary rounded me-3">
+                    <svg class="icon" fill="currentColor" viewBox="0 0 24 24">
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2a1.5 1.5 0 011.342.83l9.045 17.7A1.5 1.5 0 0121.045 23H2.955a1.5 1.5 0 01-1.342-2.47l9.045-17.7A1.5 1.5 0 0112 2zm0 7a1 1 0 00-1 1v4a1 1 0 102 0v-4a1 1 0 00-1-1zm0 8a1.25 1.25 0 100 2.5 1.25 1.25 0 000-2.5z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="h6 text-gray-400 mb-0">SOP Relaxation Required</h2>
+                    <h3 class="fw-extrabold mb-1">{{ stats.sop_relaxation_required }}</h3>
+                    <small class="text-gray-500 d-block">Due to land unavailability, donor constraints, or community resistance</small>
+                    <!-- <div class="text-warning small">Data Source: <strong>Form 5 & 6</strong></div> -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+    <!-- Card 5 - Average State Land Obtained -->
+    <div class="col-md-4 mb-4">
+    <div class="card border-0 shadow h-100">
+        <div class="card-body">
+            <div class="d-flex align-items-center">
+                <div class="icon-shape icon-shape-info rounded me-3">
+                    <svg class="icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="h6 text-gray-400 mb-0">Average State Land Obtained (Marla)</h2>
+                    <h3 class="fw-extrabold mb-1">{{ stats.avg_state_land }} Marla</h3>
+                    <small class="text-gray-500 d-block">Government allocated land for public infrastructure development</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+    <!-- Card 6 - Average Private Land Donated -->
+    <div class="col-md-4 mb-4">
+    <div class="card border-0 shadow h-100">
+        <div class="card-body">
+            <div class="d-flex align-items-center">
+                <div class="icon-shape icon-shape-success rounded me-3">
+                    <svg class="icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="h6 text-gray-400 mb-0">Average Private Land Donated</h2>
+                    <h3 class="fw-extrabold mb-1">{{ stats.avg_private_land }} Marla</h3>
+                    <small class="text-gray-500 d-block">Community contributed land for development projects</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+       <!-- Card 7 - DC Value of State Land -->
+<div class="col-md-4 mb-4">
+    <div class="card border-0 shadow h-100">
+        <div class="card-body">
+            <div class="d-flex align-items-center">
+                <div class="icon-shape icon-shape-primary rounded me-3">
+                    <svg class="icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zM14 6a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2V8a2 2 0 012-2h6zM4 14a2 2 0 002 2h8a2 2 0 002-2v-2H4v2z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="h6 text-gray-400 mb-0">DC Value of State Land</h2>
+                    <h3 class="fw-extrabold mb-1">Rs. {{ "{:,}".format(stats.dc_value_state) }}</h3>
+                    <small class="text-gray-500 d-block">Official valuation of government land allocated for projects</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+    <!-- Card 8 - DC Value of Private Land -->
+    <div class="col-md-4 mb-4">
+    <div class="card border-0 shadow h-100">
+        <div class="card-body">
+            <div class="d-flex align-items-center">
+                <div class="icon-shape icon-shape-info rounded me-3">
+                    <svg class="icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/>
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="h6 text-gray-400 mb-0">DC Value of Private Land</h2>
+                    <h3 class="fw-extrabold mb-1">Rs. {{ "{:,}".format(stats.dc_value_private) }}</h3>
+                    <small class="text-gray-500 d-block">Market valuation of privately donated land for community benefit</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+    <!-- Card 9 - Market Value of State Land -->
+  <div class="col-md-4 mb-4">
+    <div class="card border-0 shadow h-100">
+        <div class="card-body">
+            <div class="d-flex align-items-center">
+                <div class="icon-shape icon-shape-success rounded me-3">
+                    <svg class="icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="h6 text-gray-400 mb-0">Market Value of State Land</h2>
+                    <h3 class="fw-extrabold mb-1">Rs. {{ "{:,}".format(stats.market_value_state) }}</h3>
+                    <small class="text-gray-500 d-block" style="font-size: 0.75rem;">Current market assessment of government allocated land assets</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+        <!-- Card 4 -->
+<div class="col-md-4 mb-4">
+    <div class="card border-0 shadow h-100">
+        <div class="card-body">
+            <div class="d-flex align-items-center">
+                <div class="icon-shape icon-shape-primary rounded me-3">
+                    <svg class="icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M3 3a1 1 0 000 2h1.586l1.707 1.707a1 1 0 001.414 0L10 5l2.293 2.293a1 1 0 001.414 0L16 5h1a1 1 0 100-2H3zM2 8h16v9a1 1 0 01-1 1H3a1 1 0 01-1-1V8z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="h6 text-gray-400 mb-0">Market Value of Private Land</h2>
+                    <h3 class="fw-extrabold mb-1">Rs. {{ "{:,}".format(stats.market_value_private) }}</h3>
+                    <small class="text-gray-500 d-block">Ready for infrastructure execution after all clearances</small>
+                    <!-- <div class="text-success small">Data Source: <strong>Form 6</strong></div> -->
+                </div>
+            </div>
+        </div>
+    </div>
+  </div>
+
+
+
+            </div>
+
+            <!-- Land Donation Report Table - FULL WIDTH -->
+            <div class="row">
+                <div class="col-12">
+                    <!-- Include DataTables CSS and JS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+
+<div class="col-12 mb-4">
+  <div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
+    <div class="card-header text-white d-flex justify-content-between align-items-center py-3" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+      <div>
+        <h2 class="fs-5 fw-bold mb-1"><i class="fas fa-table me-2"></i>Land Donation Report</h2>
+        <p class="mb-0 small opacity-90">Comprehensive overview of all land donation cases</p>
+      </div>
+      <div class="d-flex gap-2 align-items-center">
+        <label class="text-white small mb-0 me-2"><i class="fas fa-calendar-alt me-1"></i>Filter by Date:</label>
+        <input type="date" id="dateTableFilter" class="form-control form-control-sm shadow-sm" style="width: 160px; border-radius: 8px;">
+      </div>
+    </div>
+    <div class="card-body p-3" style="background: #f8f9fa;">
+      <div class="table-responsive" style="border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+        <table id="vldTable2" class="table table-hover mb-0 modern-table" style="width:100%; background: white;">
+          <thead style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+            <tr>
+              <th class="text-center" style="font-weight: 600; padding: 14px 10px; border: none;"><i class="fas fa-calendar me-1"></i>Date</th>
+              <th class="text-center" style="font-weight: 600; padding: 14px 10px; border: none;"><i class="fas fa-hashtag me-1"></i>Case ID</th>
+              <th class="text-center" style="font-weight: 600; padding: 14px 10px; border: none;"><i class="fas fa-building me-1"></i>Tehsil</th>
+              <th class="text-center" style="font-weight: 600; padding: 14px 10px; border: none;"><i class="fas fa-home me-1"></i>Village</th>
+              <th class="text-center" style="font-weight: 600; padding: 14px 10px; border: none;"><i class="fas fa-bullseye me-1"></i>Purpose</th>
+              <th class="text-center" style="font-weight: 600; padding: 14px 10px; border: none;"><i class="fas fa-ruler me-1"></i>Area (Marlas)</th>
+              <th class="text-center" style="font-weight: 600; padding: 14px 10px; border: none;"><i class="fas fa-dollar-sign me-1"></i>DC Value</th>
+              <th class="text-center" style="font-weight: 600; padding: 14px 10px; border: none;"><i class="fas fa-money-bill me-1"></i>Market Value</th>
+              <th class="text-center" style="font-weight: 600; padding: 14px 10px; border: none;"><i class="fas fa-chart-pie me-1"></i>Impact %</th>
+              <th class="text-center" style="font-weight: 600; padding: 14px 10px; border: none;"><i class="fas fa-user me-1"></i>Gender</th>
+              <th class="text-center" style="font-weight: 600; padding: 14px 10px; border: none;"><i class="fas fa-check-circle me-1"></i>Status</th>
+              <th class="text-center" style="font-weight: 600; padding: 14px 10px; border: none;"><i class="fas fa-clock me-1"></i>Duration</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in stats.table_data %}
+            <tr style="transition: all 0.3s ease; border-bottom: 1px solid #e9ecef;" onmouseover="this.style.backgroundColor='#f0f4ff'; this.style.transform='scale(1.01)'" onmouseout="this.style.backgroundColor=''; this.style.transform='scale(1)'">
+              <td class="text-center align-middle" style="padding: 14px 10px; border: none;">
+                <span class="badge bg-light text-dark border" style="color:#2c3e50 !important;">{{ row.date }}</span>
+              </td>
+              <td class="text-center align-middle" style="padding: 14px 10px; border: none;">
+                <span class="badge" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); font-size: 0.85rem; padding: 6px 12px;">{{ row.case_id }}</span>
+              </td>
+              <td class="text-center align-middle" style="padding: 14px 10px; border: none; font-weight: 500;">{{ row.tehsil }}</td>
+              <td class="text-center align-middle" style="padding: 14px 10px; border: none; color: #6c757d;">{{ row.village }}</td>
+              <td class="text-center align-middle" style="padding: 14px 10px; border: none;">
+                <span class="badge" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); font-size: 0.8rem; padding: 5px 10px;">{{ row.land_use_purpose }}</span>
+              </td>
+              <td class="text-center align-middle" style="padding: 14px 10px; border: none;">
+                <strong style="color: #2c3e50; font-size: 0.95rem;">{{ row.area }}</strong>
+              </td>
+              <td class="text-end align-middle" style="padding: 14px 10px; border: none; color: #27ae60; font-weight: 600; font-size: 0.9rem;">
+                Rs. {{ "{:,.0f}".format(row.dc_value) if row.dc_value else 0 }}
+              </td>
+              <td class="text-end align-middle" style="padding: 14px 10px; border: none; color: #e74c3c; font-weight: 600; font-size: 0.9rem;">
+                Rs. {{ "{:,.0f}".format(row.market_value) if row.market_value else 0 }}
+              </td>
+              <td class="text-center align-middle" style="padding: 14px 10px; border: none;">
+                {% if row.impact_percentage %}
+                  <span class="badge" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); font-size: 0.8rem; padding: 5px 10px;">
+                    {{ "{:.1f}%".format(row.impact_percentage) }}
+                  </span>
+                {% else %}
+                  <span class="text-muted" style="font-size: 0.85rem;">N/A</span>
+                {% endif %}
+              </td>
+              <td class="text-center align-middle" style="padding: 14px 10px; border: none;">
+                {% if row.donor_gender == 'Male' %}
+                  <span class="badge" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 5px 12px;"><i class="fas fa-male me-1"></i>Male</span>
+                {% elif row.donor_gender == 'Female' %}
+                  <span class="badge" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 5px 12px;"><i class="fas fa-female me-1"></i>Female</span>
+                {% else %}
+                  <span class="badge bg-secondary" style="padding: 5px 12px;">{{ row.donor_gender }}</span>
+                {% endif %}
+              </td>
+              <td class="text-center align-middle" style="padding: 14px 10px; border: none;">
+                {% if 'APPROVED' in row.status.upper() %}
+                  <span class="badge bg-success shadow-sm" style="padding: 7px 14px; font-size: 0.8rem; border-radius: 20px;"><i class="fas fa-check-circle me-1"></i>Approved</span>
+                {% elif 'REJECTED' in row.status.upper() %}
+                  <span class="badge bg-danger shadow-sm" style="padding: 7px 14px; font-size: 0.8rem; border-radius: 20px;"><i class="fas fa-times-circle me-1"></i>Rejected</span>
+                {% elif 'RETURNED' in row.status.upper() %}
+                  <span class="badge bg-warning text-dark shadow-sm" style="padding: 7px 14px; font-size: 0.8rem; border-radius: 20px;"><i class="fas fa-undo me-1"></i>Returned</span>
+                {% else %}
+                  <span class="badge bg-info text-dark shadow-sm" style="padding: 7px 14px; font-size: 0.8rem; border-radius: 20px;"><i class="fas fa-clock me-1"></i>{{ row.status }}</span>
+                {% endif %}
+              </td>
+              <td class="text-center align-middle" style="padding: 14px 10px; border: none;">
+                {% if row.duration %}
+                  <span class="badge bg-dark" style="padding: 5px 10px; font-size: 0.8rem;">{{ row.duration }} days</span>
+                {% else %}
+                  <span class="text-muted" style="font-size: 0.85rem;">--</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card-footer bg-light text-center py-3">
+      <small class="text-muted">
+        <i class="fas fa-info-circle me-1"></i>
+        Total Records: <strong>{{ stats.table_data|length }}</strong> |
+        Use the search box above to filter results |
+        Click column headers to sort
+      </small>
+    </div>
+  </div>
+</div>
+
+<!-- Required Scripts -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.68/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.68/vfs_fonts.js"></script>
+
+<!-- DataTable Script -->
+<script>
+  $(document).ready(function() {
+    var table = $('#vldTable2').DataTable({
+      dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>' +
+           '<"row"<"col-sm-12"B>>' +
+           '<"row"<"col-sm-12"tr>>' +
+           '<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+      buttons: [
+        {
+          extend: 'csvHtml5',
+          text: '<i class="fas fa-file-csv"></i> Export CSV',
+          className: 'btn btn-sm btn-success me-2',
+          exportOptions: { columns: ':visible' }
+        },
+        {
+          extend: 'excelHtml5',
+          text: '<i class="fas fa-file-excel"></i> Export Excel',
+          className: 'btn btn-sm btn-primary me-2',
+          exportOptions: { columns: ':visible' }
+        },
+        {
+          extend: 'pdfHtml5',
+          text: '<i class="fas fa-file-pdf"></i> Export PDF',
+          className: 'btn btn-sm btn-danger me-2',
+          orientation: 'landscape',
+          pageSize: 'A4',
+          exportOptions: { columns: ':visible' }
+        },
+        {
+          extend: 'print',
+          text: '<i class="fas fa-print"></i> Print',
+          className: 'btn btn-sm btn-info',
+          exportOptions: { columns: ':visible' }
+        }
+      ],
+      responsive: true,
+      paging: true,
+      pageLength: 25,
+      lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+      searching: true,
+      order: [[0, 'desc']], // default sort by Date descending
+      language: {
+        search: "_INPUT_",
+        searchPlaceholder: "Search records...",
+        lengthMenu: "Show _MENU_ entries",
+        info: "Showing _START_ to _END_ of _TOTAL_ records",
+        infoEmpty: "No records available",
+        infoFiltered: "(filtered from _MAX_ total records)",
+        paginate: {
+          first: "First",
+          last: "Last",
+          next: "Next",
+          previous: "Previous"
+        }
+      },
+      columnDefs: [
+        { className: "text-center", targets: "_all" }
+      ],
+      initComplete: function() {
+        // Add custom styling to search box
+        $('.dataTables_filter input').addClass('form-control form-control-sm').css({
+          'width': '300px',
+          'display': 'inline-block',
+          'margin-left': '10px'
+        });
+        $('.dataTables_length select').addClass('form-select form-select-sm').css({
+          'width': 'auto',
+          'display': 'inline-block'
+        });
+      }
+    });
+
+    // Custom filters
+    $('#tehsilTableFilter, #villageTableFilter, #dateTableFilter').on('change', function() {
+      var tehsilVal = $('#tehsilTableFilter').val();
+      var villageVal = $('#villageTableFilter').val();
+      var dateVal = $('#dateTableFilter').val();
+
+      // Apply filters
+      table.column(2).search(tehsilVal && tehsilVal.length ? tehsilVal.join('|') : '', true, false);
+      table.column(3).search(villageVal && villageVal.length ? villageVal.join('|') : '', true, false);
+      table.column(0).search(dateVal ? dateVal : '', true, false);
+      
+      table.draw();
+    });
+  });
+</script>
+
+<style>
+  .badge {
+    font-size: 0.85rem;
+    padding: 0.4em 0.6em;
+  }
+</style>
+
+</div>
+</div>
+
+<!-- PIE CHARTS ROW - 3 Charts in 1 Row -->
+<div class="row">
+    <!-- Chart 1: % Impact on Land Donor -->
+    <div class="col-12 col-lg-4 mb-4">
+        <div class="card border-0 shadow h-100">
+            <div class="card-header border-bottom d-flex align-items-center justify-content-between">
+                <h2 class="fs-6 fw-bold mb-0">% Impact on Land Donor</h2>
+            </div>
+            <div class="card-body">
+                <div id="vldPieChart"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 2: State Land vs Private Land -->
+    <div class="col-12 col-lg-4 mb-4">
+        <div class="card border-0 shadow h-100">
+            <div class="card-header border-bottom d-flex align-items-center justify-content-between">
+                <h2 class="fs-6 fw-bold mb-0">State vs Private Land</h2>
+            </div>
+            <div class="card-body">
+                <canvas id="landDistributionPieChart" height="280"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 3: SOP Relaxation Reasons -->
+    <div class="col-12 col-lg-4 mb-4">
+        <div class="card border-0 shadow h-100">
+            <div class="card-header border-bottom d-flex align-items-center justify-content-between">
+                <h2 class="fs-6 fw-bold mb-0">SOP Relaxation Reasons</h2>
+                <button class="btn btn-sm btn-primary" onclick="showSOPDetails()">
+                    <i class="fas fa-info-circle me-1"></i>Details
+                </button>
+            </div>
+            <div class="card-body">
+                <canvas id="sopPieChart" height="280"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- BAR CHARTS ROW - 2 Charts in 1 Row -->
+<div class="row">
+    <!-- Chart 4: Intervention Type Breakdown -->
+    <div class="col-12 col-lg-6 mb-4">
+        <div class="card border-0 shadow h-100">
+            <div class="card-header border-bottom d-flex align-items-center justify-content-between">
+                <h2 class="fs-6 fw-bold mb-0">Intervention Type Breakdown</h2>
+            </div>
+            <div class="card-body">
+                <div id="interventionStackedChart"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 5: VLD/NOC Summary by Tehsil -->
+    <div class="col-12 col-lg-6 mb-4">
+        <div class="card border-0 shadow h-100">
+            <div class="card-header border-bottom d-flex align-items-center justify-content-between">
+                <h2 class="fs-6 fw-bold mb-0">VLD/NOC Summary by Tehsil</h2>
+            </div>
+            <div class="card-body">
+                <canvas id="tehsilSummaryChart" height="400"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SOP Details Modal -->
+<div class="modal fade" id="sopDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-clipboard-list me-2"></i>SOP Relaxation Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="sopDetailsContent"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ApexCharts Script -->
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script>
+    // Intervention Type Breakdown - Database Driven
+    const interventionData = {{ stats.intervention_counts | tojson | safe }};
+    const interventionCategories = Object.keys(interventionData).length > 0 ? Object.keys(interventionData) : ['No Data'];
+    const interventionValues = Object.keys(interventionData).length > 0 ? Object.values(interventionData) : [0];
+
+    var options = {
+        chart: {
+            type: 'bar',
+            height: 350,
+            toolbar: {
+                show: true,
+                tools: {
+                    download: true,
+                    selection: false,
+                    zoom: false,
+                    zoomin: false,
+                    zoomout: false,
+                    pan: false,
+                    reset: false
+                }
+            }
+        },
+        plotOptions: {
+            bar: {
+                horizontal: false,
+                columnWidth: '55%',
+                borderRadius: 4,
+                dataLabels: {
+                    position: 'top'
+                }
+            }
+        },
+        dataLabels: {
+            enabled: true,
+            offsetY: -20,
+            style: {
+                fontSize: '12px',
+                colors: ["#304758"]
+            }
+        },
+        series: [
+            {
+                name: 'Total Cases',
+                data: interventionValues,
+                color: '#667eea'
+            }
+        ],
+        xaxis: {
+            categories: interventionCategories,
+            title: {
+                text: 'Intervention Types',
+                style: {
+                    fontSize: '14px',
+                    fontWeight: 600
+                }
+            },
+            labels: {
+                style: {
+                    fontSize: '12px'
+                }
+            }
+        },
+        yaxis: {
+            title: {
+                text: 'Number of Cases',
+                style: {
+                    fontSize: '14px',
+                    fontWeight: 600
+                }
+            }
+        },
+        legend: {
+            position: 'top',
+            horizontalAlign: 'right',
+            fontSize: '13px'
+        },
+        fill: {
+            opacity: 0.9,
+            type: 'gradient',
+            gradient: {
+                shade: 'light',
+                type: 'vertical',
+                shadeIntensity: 0.5,
+                opacityFrom: 0.9,
+                opacityTo: 0.7
+            }
+        },
+        tooltip: {
+            y: {
+                formatter: function(val) {
+                    return val + " case" + (val !== 1 ? "s" : "");
+                }
+            },
+            theme: 'dark'
+        },
+        grid: {
+            borderColor: '#e7e7e7',
+            strokeDashArray: 4
+        }
+    };
+
+    var chart = new ApexCharts(document.querySelector("#interventionStackedChart"), options);
+    chart.render();
+
+    // Pie Chart (% impact on land donor)
+    const impactData = {{ stats.impact_ranges | tojson }};
+    const impactLabels = Object.keys(impactData);
+    const impactValues = Object.values(impactData);
+    const totalImpactCases = impactValues.reduce((a, b) => a + b, 0);
+    const impactPercentages = impactValues.map(v => totalImpactCases > 0 ? (v / totalImpactCases * 100) : 0);
+
+    var pieOptions = {
+        chart: {
+            type: 'pie',
+            height: 350
+        },
+        series: impactPercentages,
+        labels: impactLabels.map((label, i) => `${label} (${impactValues[i]})`),
+        colors: ['#f0bc74', '#50b9ff', '#092233', '#ffda99', '#5dade2', '#1c1c3c'],
+        tooltip: {
+            y: {
+                formatter: function (val, opts) {
+                    return impactValues[opts.seriesIndex] + " cases (" + val.toFixed(2) + "%)";
+                }
+            }
+        },
+        legend: {
+            position: 'bottom'
+        }
+    };
+
+    var pieChart = new ApexCharts(document.querySelector("#vldPieChart"), pieOptions);
+    pieChart.render();
+</script>
+
+<!-- Chart.js for other charts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    const ctx2222 = document.getElementById('tehsilSummaryChart').getContext('2d');
+    const tehsilSummaryFromDB = {{ stats.tehsil_summary | tojson }};
+
+    // Get ALL tehsils from villageData
+    const allTehsilsSet = new Set();
+    const villageDataForChart = {{ stats.village_data | tojson | safe }};
+
+    Object.keys(villageDataForChart).forEach(region => {
+      Object.keys(villageDataForChart[region]).forEach(district => {
+        Object.keys(villageDataForChart[region][district]).forEach(tehsil => {
+          allTehsilsSet.add(tehsil);
+        });
+      });
+    });
+
+    // Create array with ALL tehsils, showing 0 for those without cases
+    const allTehsils = Array.from(allTehsilsSet).sort();
+    const tehsilLabels = allTehsils;
+    const tehsilCaseCounts = allTehsils.map(tehsil => tehsilSummaryFromDB[tehsil] || 0);
+
+    new Chart(ctx2222, {
+        type: 'bar',
+        data: {
+            labels: tehsilLabels.length > 0 ? tehsilLabels : ['No Data'],
+            datasets: [
+                {
+                    label: 'Total Cases',
+                    data: tehsilCaseCounts.length > 0 ? tehsilCaseCounts : [0],
+                    backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Area (Marlas)'
+                    },
+                    ticks: {
+                        beginAtZero: true
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Tehsil Names'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: ${context.raw.toLocaleString()} marlas`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+</script>
+
+                    </div>
+                </div>
+
+<!-- State Land vs Private Land Chart Script -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const ctx = document.getElementById('landDistributionPieChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['State Land', 'Private Land (VLD)'],
+            datasets: [{
+                label: 'Land Distribution',
+                data: [{{ stats.total_state_land }}, {{ stats.total_private_land }}],
+                backgroundColor: ['#1F2937', '#f3c78e'],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '60%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        boxWidth: 14,
+                        color: '#374151',
+                        font: {
+                            size: 13
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return `${label}: ${value.toLocaleString()} marlas (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+
+
+<!-- SOP Relaxation Chart Script & Modal Function -->
+<script>
+function showSOPDetails() {
+    const relaxationData = {{ stats.relaxation_reasons | tojson | safe }};
+    let detailsHTML = '<div class="table-responsive"><table class="table table-hover table-striped">';
+    detailsHTML += '<thead class="table-dark"><tr><th>Relaxation Reason</th><th class="text-end">Count</th></tr></thead><tbody>';
+
+    if (relaxationData && typeof relaxationData === 'object' && Object.keys(relaxationData).length > 0) {
+        Object.entries(relaxationData).forEach(([reason, count]) => {
+            detailsHTML += `<tr><td>${reason}</td><td class="text-end"><span class="badge bg-primary">${count}</span></td></tr>`;
+        });
+    } else {
+        detailsHTML += '<tr><td colspan="2" class="text-center text-muted">No relaxation data available</td></tr>';
+    }
+
+    detailsHTML += '</tbody></table></div>';
+    document.getElementById('sopDetailsContent').innerHTML = detailsHTML;
+
+    const modal = new bootstrap.Modal(document.getElementById('sopDetailsModal'));
+    modal.show();
+}
+</script>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    const ctxPie = document.getElementById('sopPieChart').getContext('2d');
+    const relaxationData = {{ stats.relaxation_reasons | tojson | safe }};
+
+    // Process the data properly
+    let relaxationLabels = [];
+    let relaxationValues = [];
+
+    if (relaxationData && typeof relaxationData === 'object' && Object.keys(relaxationData).length > 0) {
+        relaxationLabels = Object.keys(relaxationData);
+        relaxationValues = Object.values(relaxationData);
+    } else {
+        relaxationLabels = ['No Relaxation Data Available'];
+        relaxationValues = [1];
+    }
+
+    const relaxationColors = ['#1F2937', '#f3c78e', '#50b9ff', '#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff'];
+
+    new Chart(ctxPie, {
+        type: 'doughnut',
+        data: {
+            labels: relaxationLabels,
+            datasets: [{
+                label: 'Cases',
+                data: relaxationValues,
+                backgroundColor: relaxationColors.slice(0, relaxationLabels.length),
+                borderColor: '#fff',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '60%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        boxWidth: 14,
+                        color: '#374151',
+                        font: {
+                            size: 13
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw || 0;
+                            return `${label}: ${value}%`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+</script>
+
+
+
+<!-- set 2 start -->
+ 
+
+
+<!-- set 2 end -->
+
+
+
+                    </div>
+                </div>
+            </div>
+
+
+
+
+
+
+
+
+
+
+            
+            <div class="theme-settings card bg-gray-800 pt-2 collapse" id="theme-settings">
+    <div class="card-body bg-gray-800 text-white pt-4">
+        <button type="button" class="btn-close theme-settings-close" aria-label="Close" data-bs-toggle="collapse"
+            href="#theme-settings" role="button" aria-expanded="false" aria-controls="theme-settings"></button>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <p class="m-0 mb-1 me-4 fs-7">Open source <span role="img" aria-label="gratitude">💛</span></p>
+            <a class="github-button" href="https://github.com/themesberg/volt-bootstrap-5-dashboard"
+                data-color-scheme="no-preference: dark; light: light; dark: light;" data-icon="octicon-star"
+                data-size="large" data-show-count="true"
+                aria-label="Star themesberg/volt-bootstrap-5-dashboard on GitHub">Star</a>
+        </div>
+        <a href="https://themesberg.com/product/admin-dashboard/volt-bootstrap-5-dashboard" target="_blank"
+            class="btn btn-secondary d-inline-flex align-items-center justify-content-center mb-3 w-100">
+            Download 
+            <svg class="icon icon-xs ms-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M2 9.5A3.5 3.5 0 005.5 13H9v2.586l-1.293-1.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 15.586V13h2.5a4.5 4.5 0 10-.616-8.958 4.002 4.002 0 10-7.753 1.977A3.5 3.5 0 002 9.5zm9 3.5H9V8a1 1 0 012 0v5z" clip-rule="evenodd"></path></svg>
+        </a>
+        <p class="fs-7 text-gray-300 text-center">Available in the following technologies:</p>
+        <div class="d-flex justify-content-center">
+            <a class="me-3" href="https://themesberg.com/product/admin-dashboard/volt-bootstrap-5-dashboard"
+                target="_blank">
+                <img src="../../assets/img/technologies/bootstrap-5-logo.svg" class="image image-xs">
+            </a>
+            <a href="https://demo.themesberg.com/volt-react-dashboard/#/" target="_blank">
+                <img src="../../assets/img/technologies/react-logo.svg" class="image image-xs">
+            </a>
+        </div>
+    </div>
+</div>
+
+
+<!-- <footer class="bg-white rounded shadow p-5 mb-4 mt-4">
+    <div class="row">
+        <div class="col-12 col-md-4 col-xl-6 mb-4 mb-md-0">
+            <p class="mb-0 text-center text-lg-start">© <span class="current-year"></span> <a class="text-primary fw-normal" href="#" target="_blank">PRMSC (Punjab Rural Municipal Services Company)</a></p>
+        </div>
+        <div class="col-12 col-md-8 col-xl-6 text-center text-lg-start">
+            <ul class="list-inline list-group-flush list-group-borderless text-md-end mb-0">
+                <li class="list-inline-item px-0 px-sm-2">
+                    <a href="#">VLD System</a>
+                </li>
+                <li class="list-inline-item px-0 px-sm-2">
+                    <a href="#">Dashboard</a>
+                </li>
+                <li class="list-inline-item px-0 px-sm-2">
+                    <a href="#">Reports</a>
+                </li>
+                <li class="list-inline-item px-0 px-sm-2">
+                    <a href="#">Support</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</footer> -->
+        </main>
+
+    <!-- Core -->
+<script src="../../vendor/@popperjs/core/dist/umd/popper.min.js"></script>
+<script src="../../vendor/bootstrap/dist/js/bootstrap.min.js"></script>
+
+<!-- Vendor JS -->
+<script src="../../vendor/onscreen/dist/on-screen.umd.min.js"></script>
+
+<!-- Slider -->
+<!-- Volt JS -->
+<script src="../../assets/js/volt.js"></script>
+
+    
+</body>
+
+</html>
+
+
+
+<!-- Volt JS -->
+<script src="../../assets/js/volt.js"></script>
+
+    
+</body>
+
+</html>
+
+
+
+<script src="../../vendor/nouislider/distribute/nouislider.min.js"></script>
+
+<!-- Smooth scroll -->
+<script src="../../vendor/smooth-scroll/dist/smooth-scroll.polyfills.min.js"></script>
+
+<!-- Charts -->
+<script
+ src="../../vendor/chartist/dist/chartist.min.js"></script>
+<script src="../../vendor/chartist-plugin-tooltips/dist/chartist-plugin-tooltip.min.js"></script>
+
+<!-- Datepicker -->
+<script src="../../vendor/vanillajs-datepicker/dist/js/datepicker.min.js"></script>
+
+<!-- Sweet Alerts 2 -->
+<script src="../../vendor/sweetalert2/dist/sweetalert2.all.min.js"></script>
+
+<!-- Moment JS -->
+<script
+ src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.27.0/moment.min.js"></script>
+
+<!-- Vanilla JS Datepicker -->
+<script src="../../vendor/vanillajs-datepicker/dist/js/datepicker.min.js"></script>
+
+<!-- Notyf -->
+<script src="../../vendor/notyf/notyf.min.js"></script>
+
+<!-- Simplebar -->
+<script src="../../vendor/simplebar/dist/simplebar.min.js"></script>
+
+
+<!-- Github buttons -->
+<script async defer src="https://buttons.github.io/buttons.js"></script>
+
+<!-- Volt JS -->
+<script src="../../assets/js/volt.js"></script>
+
+    
+</body>
+
+</html>
+
+
+
+

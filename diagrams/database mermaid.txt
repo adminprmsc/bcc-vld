@@ -1,0 +1,149 @@
+erDiagram
+    users ||--o{ cases : "creates (EDCS)"
+    users ||--o{ cases : "assigned_to_dm"
+    users ||--o{ cases : "assigned_to_bcc_officer"
+    users ||--o{ cases : "assigned_to_tm"
+    users ||--o{ cases : "assigned_to_bccsp"
+    users ||--o{ cases : "reviewing_by_dm"
+    users ||--o{ cases : "reviewing_by_bcc"
+    users ||--o{ cases : "reviewing_by_tm"
+    users ||--o{ notifications : "receives"
+    users ||--o{ completed_request : "completes"
+    users ||--o{ returned_forms : "returns"
+    users ||--o{ case_history : "performs"
+    users ||--o{ dm_checklist : "fills"
+    users ||--o{ bcc_checklist : "fills"
+    
+    cases ||--|| edcs_user_details : "has"
+    cases ||--o| state_land_form : "has (if State Land)"
+    cases ||--o| vld_checklist_form : "has (if VLD)"
+    cases ||--o{ dm_checklist : "has"
+    cases ||--o{ bcc_checklist : "has"
+    cases ||--o{ completed_request : "has"
+    cases ||--o{ returned_forms : "has"
+    cases ||--o{ case_history : "has"
+    cases ||--o{ notifications : "generates"
+    
+    users {
+        int id PK
+        string email UK
+        string password
+        string name
+        string role
+        string region
+        string district
+        string tehsil
+        datetime created_at
+    }
+    
+    cases {
+        int case_id PK
+        string case_number UK
+        string land_type
+        string status
+        string current_stage
+        int edcs_user_id FK
+        int assigned_to_dm FK
+        int assigned_to_bcc_officer FK
+        int assigned_to_tm FK
+        int assigned_to_bccsp FK
+        int reviewing_by_dm FK
+        int reviewing_by_bcc FK
+        int reviewing_by_tm FK
+        datetime created_at
+        datetime updated_at
+    }
+    
+    edcs_user_details {
+        int id PK
+        int case_id FK
+        string project_name
+        string project_location
+        float land_area
+        string land_owner
+        string contact_number
+        text additional_notes
+        datetime created_at
+    }
+    
+    state_land_form {
+        int id PK
+        int case_id FK
+        string q1_response
+        text q1_remarks
+        string q20_response
+        text q20_remarks
+        datetime created_at
+    }
+    
+    vld_checklist_form {
+        int id PK
+        int case_id FK
+        string q1_response
+        text q1_remarks
+        string q20_response
+        text q20_remarks
+        datetime created_at
+    }
+    
+    dm_checklist {
+        int id PK
+        int case_id FK
+        int dm_user_id FK
+        string q1_response
+        text q1_remarks
+        string q20_response
+        text q20_remarks
+        datetime created_at
+    }
+    
+    bcc_checklist {
+        int id PK
+        int case_id FK
+        int bcc_user_id FK
+        string q1_response
+        text q1_remarks
+        string q20_response
+        text q20_remarks
+        datetime created_at
+    }
+    
+    completed_request {
+        int id PK
+        int case_id FK
+        int completed_by FK
+        string final_status
+        text remarks
+        datetime completion_date
+    }
+    
+    returned_forms {
+        int id PK
+        int case_id FK
+        int returned_by FK
+        int returned_to FK
+        text reason
+        string stage_returned_from
+        datetime returned_at
+    }
+    
+    case_history {
+        int id PK
+        int case_id FK
+        int performed_by FK
+        string action
+        string from_stage
+        string to_stage
+        text remarks
+        datetime created_at
+    }
+    
+    notifications {
+        int id PK
+        int recipient_id FK
+        int case_id FK
+        text message
+        string notification_type
+        boolean is_read
+        datetime created_at
+    }

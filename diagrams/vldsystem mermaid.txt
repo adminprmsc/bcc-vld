@@ -1,0 +1,68 @@
+flowchart TD
+    Start([EDCS Creates Case]) --> Draft{Save as Draft?}
+    Draft -->|Yes| DraftSaved[(Draft Saved)]
+    Draft -->|No| Submit[Submit to DM]
+    
+    Submit --> DMStage[DM Stage<br/>Status: submitted]
+    
+    DMStage --> DMReview{DM Review}
+    DMReview -->|Approve| DMApprove[Status: approved<br/>Stage: BCCO]
+    DMReview -->|Reject| DMReject[Status: rejected<br/>Stage: COMPLETED]
+    DMReview -->|Return| DMReturn[Status: submitted<br/>Stage: EDCS]
+    
+    DMReturn --> EDCSRevise[EDCS Revises]
+    EDCSRevise --> Submit
+    
+    DMApprove --> BCCOStage[BCCO Stage<br/>Status: approved]
+    
+    BCCOStage --> BCCOReview{BCCO Review}
+    BCCOReview -->|Approve| BCCOApprove[Status: approved_by_bcc<br/>Stage: TM]
+    BCCOReview -->|Reject| BCCOReject[Status: rejected_by_bcco<br/>Stage: DM<br/>DM Review Only]
+    BCCOReview -->|Return| BCCOReturn[Status: returned_by_bcco<br/>Stage: DM<br/>DM Pending + Review]
+    
+    BCCOReject --> DMReviewOnly[DM sees in Review<br/>Red Badge]
+    BCCOReturn --> DMPending[DM sees in Pending<br/>Orange Badge]
+    
+    DMPending --> DMReview
+    DMReviewOnly -.->|View Only| End1([Case Ends])
+    
+    BCCOApprove --> TMStage[TM Stage<br/>Status: approved_by_bcc]
+    
+    TMStage --> TMReview{TM Review}
+    TMReview -->|Approve| TMApprove[Status: approved_by_tm<br/>Stage: BCCSP]
+    TMReview -->|Reject| TMReject[Status: rejected_by_tm<br/>Stage: BCCO]
+    TMReview -->|Return| TMReturn[Status: returned_by_tm<br/>Stage: BCCO]
+    
+    TMReject --> BCCOReviewOnly[BCCO sees in Review]
+    TMReturn --> BCCOPending[BCCO sees in Pending]
+    
+    BCCOPending --> BCCOReview
+    BCCOReviewOnly -.->|View Only| End2([Case Ends])
+    
+    TMApprove --> BCCSPStage[BCCSP Stage<br/>Status: approved_by_tm]
+    
+    BCCSPStage --> BCCSPReview{BCCSP Review}
+    BCCSPReview -->|Approve| BCCSPApprove[Status: completed<br/>Stage: COMPLETED<br/>✅ SUCCESS]
+    BCCSPReview -->|Reject| BCCSPReject[Status: rejected<br/>Stage: COMPLETED<br/>❌ REJECTED]
+    BCCSPReview -->|Return| BCCSPReturn[Status: returned_by_bccsp<br/>Stage: TM]
+    
+    BCCSPReturn --> TMPending[TM sees in Pending]
+    TMPending --> TMReview
+    
+    BCCSPApprove --> End3([Case Completed])
+    BCCSPReject --> End4([Case Rejected])
+    DMReject --> End5([Case Rejected])
+    
+    style Start fill:#90EE90
+    style End3 fill:#90EE90
+    style End4 fill:#FFB6C1
+    style End5 fill:#FFB6C1
+    style End1 fill:#FFB6C1
+    style End2 fill:#FFB6C1
+    style BCCSPApprove fill:#90EE90
+    style BCCSPReject fill:#FFB6C1
+    style DMReject fill:#FFB6C1
+    style BCCOReject fill:#FFA500
+    style BCCOReturn fill:#FFD700
+    style DMReviewOnly fill:#FFB6C1
+    style DMPending fill:#FFD700
