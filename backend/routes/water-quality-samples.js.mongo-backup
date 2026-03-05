@@ -1,0 +1,1008 @@
+const express = require('express');
+const mongoose = require('mongoose');
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
+
+const auth = require('../middleware/auth');
+const ConsultantPlan = require('../models/ConsultantPlan');
+const WaterQualitySample = require('../models/WaterQualitySample');
+const User = require('../models/User');
+const { computePotabilityIndex } = require('../services/waterQuality');
+const {
+  needsTehsilScope,
+  resolveUserTehsils,
+  buildTehsilScopeQuery,
+  tehsilMatches
+} = require('../utils/tehsilScope');
+const {
+  waterQualityValidation,
+  handleValidationErrors,
+  validateObjectId
+} = require('../middleware/validators');
+
+const router = express.Router();
+router.use(auth);
+
+const ALLOWED_UPLOAD_TYPES = new Set([
+  'application/pdf',
+  'image/png',
+  'image/jpeg',
+  'image/jpg',
+  'text/plain'
+]);
+
+const SAMPLE_UPLOAD_DIR = path.join(__dirname, '../uploads/water-quality');
+ensureDirectory(SAMPLE_UPLOAD_DIR);
+
+const storage = multer.diskStorage({
+  destination(req, file, cb) {
+    ensureDirectory(SAMPLE_UPLOAD_DIR);
+    cb(null, SAMPLE_UPLOAD_DIR);
+  },
+  filename(req, file, cb) {
+    const timestamp = Date.now();
+    const random = Math.round(Math.random() * 1e9);
+    const ext = path.extname(file.originalname) || '';
+    cb(null, `sample-${timestamp}-${random}${ext}`);
+  }
+});
+
+function uploadFilter(req, file, cb) {
+  if (!ALLOWED_UPLOAD_TYPES.has(file.mimetype)) {
+    cb(new Error('Unsupported attachment type.'));
+    return;
+  }
+  cb(null, true);
+}
+
+const uploadMiddleware = multer({
+  storage,
+  fileFilter: uploadFilter,
+  limits: { fileSize: 16 * 1024 * 1024, files: 5 }
+}).array('attachments', 5);
+
+const ROLE_RA = 'RA Environment';
+const ROLE_SAMPLER = 'PCRWR Sampler';
+const ROLE_LAB = 'PCRWR Lab';
+
+const RA_ROLES = new Set([ROLE_RA]);
+const PCRWR_SAMPLER_ROLES = new Set([ROLE_SAMPLER]);
+const PCRWR_LAB_ROLES = new Set([ROLE_LAB]);
+const PCRWR_ROLES = new Set([...PCRWR_SAMPLER_ROLES, ...PCRWR_LAB_ROLES]);
+const MANAGER_ROLES = new Set(['Super Admin', 'Admin']);
+
+router.get('/', async (req, res) => {
+  try {
+    const role = req.user?.role || '';
+    const requiresScope = needsTehsilScope(role);
+    const tehsilScope = requiresScope ? await resolveUserTehsils(req.user) : [];
+
+    if (requiresScope && tehsilScope.length === 0) {
+      return res.json([]);
+    }
+
+    const requestedTehsil = req.query.tehsil?.toString();
+    if (requestedTehsil && requiresScope && !tehsilMatches(tehsilScope, requestedTehsil)) {
+      return res.json([]);
+    }
+
+    const filter = buildFilter(req, tehsilScope);
+    const samples = await WaterQualitySample.find(filter)
+      .populate('plan', 'title category tehsil district criticalFlag latestQualityStatus')
+      .populate('assignedSampler', 'name role')
+      .populate('createdBy', 'name role')
+      .sort({ updatedAt: -1, createdAt: -1 })
+      .limit(limitInt(req.query.limit, 200));
+
+    res.json(samples.map(serializeSample));
+  } catch (err) {
+    console.error('GET /water-quality-samples error:', err);
+    return handleRouteError(res, err, 'Server error');
+  }
+});
+
+router.get('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ msg: 'Invalid sample identifier' });
+    }
+  const sample = await WaterQualitySample.findById(id)
+      .populate('plan', 'title category tehsil district criticalFlag latestQualityStatus')
+      .populate('assignedSampler', 'name role')
+      .populate('createdBy', 'name role')
+      .populate('updatedBy', 'name role');
+    if (!sample) {
+      return res.status(404).json({ msg: 'Sample not found' });
+    }
+    const role = req.user?.role || '';
+    if (needsTehsilScope(role)) {
+      const tehsilScope = await resolveUserTehsils(req.user);
+      if (tehsilScope.length === 0 || !tehsilMatches(tehsilScope, sample.planSnapshot?.tehsil || sample.plan?.tehsil)) {
+        return res.status(403).json({ msg: 'Forbidden' });
+      }
+    }
+    if (!canReadSample(req, sample)) {
+      return res.status(403).json({ msg: 'Forbidden' });
+    }
+    res.json(serializeSample(sample));
+  } catch (err) {
+    console.error('GET /water-quality-samples/:id error:', err);
+    return handleRouteError(res, err, 'Server error');
+  }
+});
+
+router.post('/', async (req, res) => {
+  try {
+    if (!canCreate(req.user?.role)) {
+      return res.status(403).json({ msg: 'Forbidden' });
+    }
+
+    const plan = await ConsultantPlan.findById(req.body.planId);
+    if (!plan) {
+      return res.status(404).json({ msg: 'Linked asset not found' });
+    }
+
+    const userId = req.user?.userId;
+    const creatorName = safeString(req.user?.name);
+
+    const sample = new WaterQualitySample({
+      plan: plan._id,
+      planSnapshot: {
+        planId: plan._id,
+        title: plan.title,
+        category: plan.category,
+        tehsil: plan.tehsil,
+        district: plan.district
+      },
+      status: 'awaiting_assignment',
+      statusHistory: [buildStatusEvent('critical_flagged', req.user, 'Critical asset flagged')],
+      createdBy: userId,
+      createdByName: creatorName,
+      updatedBy: userId,
+      updatedByName: creatorName
+    });
+
+    await maybeAutoAssignSampler(sample, req.user);
+    await sample.save();
+
+    const markedById = mongoose.Types.ObjectId.isValid(userId) ? new mongoose.Types.ObjectId(userId) : null;
+
+    plan.latestQualityStatus = {
+      status: 'pending_sample',
+      label: 'Awaiting Sample',
+      score: null,
+      updatedAt: new Date()
+    };
+    plan.criticalFlag = true;
+    plan.criticalReason = safeString(req.body.reason) || 'Flagged for water quality sampling';
+    plan.criticalMarkedAt = new Date();
+    plan.criticalMarkedBy = markedById;
+    plan.criticalMarkedByName = creatorName;
+    plan.criticalAcknowledgedAt = null;
+    plan.criticalAcknowledgedBy = null;
+    plan.criticalAcknowledgedByName = '';
+    await plan.save();
+
+    res.status(201).json(serializeSample(sample));
+  } catch (err) {
+    console.error('POST /water-quality-samples error:', err);
+    return handleRouteError(res, err, 'Unable to create sample');
+  }
+});
+
+async function maybeAutoAssignSampler(sample, actor) {
+  try {
+    const sampler = await resolveDefaultSampler();
+    if (!sampler) {
+      return;
+    }
+
+    const assignedAt = new Date();
+    sample.set({
+      assignedSampler: sampler._id,
+      assignedSamplerName: sampler.name || 'PCRWR Sampler',
+      assignedAt,
+      status: 'awaiting_collection'
+    });
+
+    sample.statusHistory = sample.statusHistory || [];
+    sample.statusHistory.push(
+      buildStatusEvent('assignment', actor, `Auto-assigned to ${sampler.name || 'PCRWR Sampler'}`)
+    );
+    auditUpdate(sample, actor);
+  } catch (err) {
+    console.error('Auto-assignment error:', err.message || err);
+  }
+}
+
+async function resolveDefaultSampler() {
+  const preferredEmail = (process.env.DEFAULT_WATER_QUALITY_SAMPLER_EMAIL || '').trim();
+  if (preferredEmail) {
+    const samplerByEmail = await User.findOne({ email: preferredEmail, role: ROLE_SAMPLER });
+    if (samplerByEmail) {
+      return samplerByEmail;
+    }
+  }
+
+  const activeSampler = await User.findOne({ role: ROLE_SAMPLER, activeStatus: 'active' }).sort({ _id: 1 });
+  if (activeSampler) {
+    return activeSampler;
+  }
+
+  return User.findOne({ role: ROLE_SAMPLER }).sort({ _id: 1 });
+}
+
+router.post('/:id/assign', async (req, res) => {
+  try {
+    if (!RA_ROLES.has(req.user?.role || '')) {
+      return res.status(403).json({ msg: 'Forbidden' });
+    }
+  const sample = await fetchEditableSample(req.params.id, req, res);
+    if (!sample) {
+      return;
+    }
+    if (['closed', 'cancelled', 'results_ready', 'in_lab'].includes(sample.status)) {
+      return res.status(409).json({ msg: 'Sample has already moved past assignment.' });
+    }
+    if (!['awaiting_assignment', 'awaiting_collection'].includes(sample.status)) {
+      return res.status(409).json({ msg: 'Sample is not in a state that allows assignment.' });
+    }
+    const samplerId = parseObjectId(req.body.samplerId);
+    if (!samplerId) {
+      return res.status(400).json({ msg: 'Sampler is required' });
+    }
+    const sampler = await User.findOne({ _id: samplerId, role: 'PCRWR Sampler' }).select('name role');
+    if (!sampler) {
+      return res.status(400).json({ msg: 'Sampler not found or not PCRWR Sampler' });
+    }
+
+    sample.assignedSampler = sampler._id;
+    sample.assignedSamplerName = sampler.name || 'PCRWR Sampler';
+    sample.assignedAt = new Date();
+    sample.status = 'awaiting_collection';
+    sample.statusHistory.push(
+      buildStatusEvent('assignment', req.user, `Assigned to ${sampler.name || 'PCRWR Sampler'}`)
+    );
+    auditUpdate(sample, req.user);
+    await sample.save();
+
+    res.json(serializeSample(sample));
+  } catch (err) {
+    console.error('POST /water-quality-samples/:id/assign error:', err);
+    return handleRouteError(res, err, 'Unable to assign sample');
+  }
+});
+
+router.post('/:id/collection', async (req, res) => {
+  try {
+    ensureRole(req.user, PCRWR_SAMPLER_ROLES);
+  const sample = await fetchEditableSample(req.params.id, req, res);
+    if (!sample) {
+      return;
+    }
+    if (!['awaiting_collection', 'collecting'].includes(sample.status)) {
+      return res.status(409).json({ msg: 'Sample is not ready for collection.' });
+    }
+    if (!ensureSamplerOwnership(sample, req.user, res)) {
+      return;
+    }
+
+    const collection = sample.collection || {};
+    collection.collectedAt = parseDate(req.body.collectedAt) || new Date();
+    collection.fieldNotes = safeString(req.body.fieldNotes);
+    collection.location = parseCoords(req.body.location) || collection.location;
+    collection.collectedBy = req.user?.userId;
+    collection.collectedByName = safeString(req.user?.name);
+    sample.collection = collection;
+
+    const alreadyCollecting = sample.status === 'collecting';
+    sample.status = 'collecting';
+    if (!alreadyCollecting) {
+      sample.statusHistory.push(buildStatusEvent('collection_started', req.user, 'Field collection started'));
+    }
+    auditUpdate(sample, req.user);
+    await sample.save();
+
+    res.json(serializeSample(sample));
+  } catch (err) {
+    console.error('POST /water-quality-samples/:id/collection error:', err);
+    return handleRouteError(res, err, 'Unable to update collection details');
+  }
+});
+
+router.post('/:id/collection/complete', async (req, res) => {
+  try {
+    ensureRole(req.user, PCRWR_SAMPLER_ROLES);
+  const sample = await fetchEditableSample(req.params.id, req, res);
+    if (!sample) {
+      return;
+    }
+    if (!['collecting', 'awaiting_collection'].includes(sample.status)) {
+      return res.status(409).json({ msg: 'Sample cannot be marked collected in its current status.' });
+    }
+    if (!ensureSamplerOwnership(sample, req.user, res)) {
+      return;
+    }
+
+    uploadMiddleware(req, res, async (err) => {
+      if (err) {
+        cleanupFiles(req.files);
+        return res.status(400).json({ msg: err.message || 'Unable to process attachments.' });
+      }
+
+      const attachments = mergeAttachments(sample.collection?.attachments, req.files);
+      sample.collection = {
+        ...(sample.collection || {}),
+        collectedAt: parseDate(req.body.collectedAt) || new Date(),
+        fieldNotes: safeString(req.body.fieldNotes),
+        location: parseCoords(req.body.location) || sample.collection?.location,
+        attachments
+      };
+
+      sample.status = 'in_lab';
+      sample.statusHistory.push(buildStatusEvent('collection_complete', req.user, 'Sample collected and dispatched'));
+      auditUpdate(sample, req.user);
+      await sample.save();
+      res.json(serializeSample(sample));
+    });
+  } catch (err) {
+    console.error('POST /water-quality-samples/:id/collection/complete error:', err);
+    return handleRouteError(res, err, 'Unable to complete sample collection');
+  }
+});
+
+router.post('/:id/lab', async (req, res) => {
+  try {
+    ensureRole(req.user, PCRWR_LAB_ROLES);
+  const sample = await fetchEditableSample(req.params.id, req, res);
+    if (!sample) {
+      return;
+    }
+    if (!['in_lab', 'results_ready'].includes(sample.status)) {
+      return res.status(409).json({ msg: 'Sample results can only be posted once received by the lab.' });
+    }
+
+    uploadMiddleware(req, res, async (err) => {
+      if (err) {
+        cleanupFiles(req.files);
+        return res.status(400).json({ msg: err.message || 'Unable to process attachments.' });
+      }
+
+  const metrics = normalizeLabMetrics(parseMetrics(req.body.metrics));
+      const labAnalysis = sample.labAnalysis || {};
+      labAnalysis.receivedAt = parseDate(req.body.receivedAt) || labAnalysis.receivedAt || new Date();
+      labAnalysis.completedAt = parseDate(req.body.completedAt) || labAnalysis.completedAt || new Date();
+      labAnalysis.metrics = metrics;
+      labAnalysis.attachments = mergeAttachments(sample.labAnalysis?.attachments, req.files);
+      labAnalysis.analyst = req.user?.userId;
+      labAnalysis.analystName = safeString(req.user?.name);
+      labAnalysis.notes = safeString(req.body.notes);
+      sample.labAnalysis = labAnalysis;
+
+      const { value, rating } = computePotabilityIndex(metrics);
+      sample.computedScore = {
+        indexName: 'potability-index',
+        value,
+        rating,
+        updatedAt: new Date()
+      };
+
+      sample.status = 'results_ready';
+      sample.statusHistory.push(buildStatusEvent('results_posted', req.user, 'Lab results posted'));
+      auditUpdate(sample, req.user);
+      await sample.save();
+
+      await ConsultantPlan.findByIdAndUpdate(sample.plan, {
+        latestQualityStatus: {
+          status: rating,
+          score: value,
+          label: labelForRating(rating),
+          updatedAt: new Date()
+        }
+      });
+
+      res.json(serializeSample(sample));
+    });
+  } catch (err) {
+    console.error('POST /water-quality-samples/:id/lab error:', err);
+    return handleRouteError(res, err, 'Unable to submit lab results');
+  }
+});
+
+router.post('/:id/close', async (req, res) => {
+  try {
+    ensureRole(req.user, new Set([...PCRWR_ROLES, ...RA_ROLES, ...MANAGER_ROLES]));
+  const sample = await fetchEditableSample(req.params.id, req, res);
+    if (!sample) {
+      return;
+    }
+    if (['closed', 'cancelled'].includes(sample.status)) {
+      return res.status(409).json({ msg: 'Sample is already closed or cancelled.' });
+    }
+
+    const note = safeString(req.body.note);
+    sample.status = 'closed';
+    sample.statusHistory.push(buildStatusEvent('closed', req.user, note || 'Sample closed'));
+    auditUpdate(sample, req.user);
+    await sample.save();
+
+    await ConsultantPlan.findByIdAndUpdate(sample.plan, {
+      $set: {
+        criticalFlag: false,
+        criticalReason: '',
+        criticalMarkedAt: null,
+        criticalMarkedBy: null,
+        criticalMarkedByName: '',
+        criticalAcknowledgedAt: null,
+        criticalAcknowledgedBy: null,
+        criticalAcknowledgedByName: ''
+      }
+    });
+
+    res.json(serializeSample(sample));
+  } catch (err) {
+    console.error('POST /water-quality-samples/:id/close error:', err);
+    return handleRouteError(res, err, 'Unable to close sample');
+  }
+});
+
+router.post('/:id/cancel', async (req, res) => {
+  try {
+    ensureRole(req.user, new Set([...RA_ROLES, ...MANAGER_ROLES]));
+  const sample = await fetchEditableSample(req.params.id, req, res);
+    if (!sample) {
+      return;
+    }
+    if (['closed', 'cancelled'].includes(sample.status)) {
+      return res.status(409).json({ msg: 'Sample is already closed or cancelled.' });
+    }
+
+    const note = safeString(req.body.note);
+    sample.status = 'cancelled';
+    sample.statusHistory.push(buildStatusEvent('cancelled', req.user, note || 'Sample cancelled'));
+    auditUpdate(sample, req.user);
+    await sample.save();
+
+    res.json(serializeSample(sample));
+  } catch (err) {
+    console.error('POST /water-quality-samples/:id/cancel error:', err);
+    return handleRouteError(res, err, 'Unable to cancel sample');
+  }
+});
+
+router.post('/:id/attachments', (req, res) => {
+  try {
+    ensureRole(req.user, PCRWR_ROLES);
+  } catch (err) {
+    return handleRouteError(res, err, 'Forbidden');
+  }
+  uploadMiddleware(req, res, (err) => {
+    if (err) {
+      cleanupFiles(req.files);
+      return res.status(400).json({ msg: err.message || 'Unable to process attachments.' });
+    }
+
+    const files = Array.isArray(req.files) ? req.files : [];
+    const attachments = files.map((file) => ({
+      storedName: path.posix.join('water-quality', file.filename),
+      originalName: file.originalname || '',
+      mimeType: file.mimetype || '',
+      size: file.size || 0
+    }));
+
+    res.status(201).json({ attachments: attachments.map(decorateAttachment) });
+  });
+});
+
+router.get('/plans/:planId', async (req, res) => {
+  try {
+    const { planId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(planId)) {
+      return res.status(400).json({ msg: 'Invalid plan identifier' });
+    }
+
+    const role = req.user?.role || '';
+    const requiresScope = needsTehsilScope(role);
+    const tehsilScope = requiresScope ? await resolveUserTehsils(req.user) : [];
+    if (requiresScope && tehsilScope.length === 0) {
+      return res.json([]);
+    }
+
+    const requestedTehsil = req.query.tehsil?.toString();
+    if (requestedTehsil && requiresScope && !tehsilMatches(tehsilScope, requestedTehsil)) {
+      return res.json([]);
+    }
+
+    const filter = { plan: planId };
+    if (Array.isArray(tehsilScope) && tehsilScope.length) {
+      const scopeQuery = buildTehsilScopeQuery(tehsilScope, 'planSnapshot.tehsil');
+      if (scopeQuery) {
+        Object.assign(filter, scopeQuery);
+      }
+    }
+    if (requestedTehsil) {
+      filter['planSnapshot.tehsil'] = { $regex: new RegExp(escapeRegex(requestedTehsil), 'i') };
+    }
+
+    const samples = await WaterQualitySample.find(filter)
+      .sort({ createdAt: -1 })
+      .limit(limitInt(req.query.limit, 50));
+    res.json(samples.map(serializeSample));
+  } catch (err) {
+    res.status(500).json({ msg: 'Server error', error: err.message });
+  }
+});
+
+function ensureRole(user, roles) {
+  const role = user?.role || '';
+  if (!roles.has(role)) {
+    throw Object.assign(new Error('Forbidden'), { statusCode: 403 });
+  }
+}
+
+function buildFilter(req, tehsilScope = []) {
+  const role = req.user?.role || '';
+  const filters = {};
+  const andFilters = [];
+
+  if (RA_ROLES.has(role)) {
+    filters.createdBy = req.user?.userId;
+  }
+
+  if (PCRWR_ROLES.has(role)) {
+    filters.$or = filters.$or || [];
+    filters.$or.push({ assignedSampler: req.user?.userId }, { status: { $in: ['awaiting_collection', 'collecting', 'in_lab'] } });
+  }
+
+  if (Array.isArray(tehsilScope) && tehsilScope.length) {
+    const query = buildTehsilScopeQuery(tehsilScope, 'planSnapshot.tehsil');
+    if (query) {
+      andFilters.push(query);
+    }
+  }
+
+  if (req.query.planId && mongoose.Types.ObjectId.isValid(req.query.planId)) {
+    filters.plan = req.query.planId;
+  }
+
+  if (req.query.status) {
+    andFilters.push({ status: { $regex: new RegExp(`^${escapeRegex(req.query.status)}$`, 'i') } });
+  }
+
+  if (req.query.tehsil) {
+    andFilters.push({ 'planSnapshot.tehsil': { $regex: new RegExp(escapeRegex(req.query.tehsil), 'i') } });
+  }
+
+  if (andFilters.length) {
+    filters.$and = andFilters;
+  }
+
+  return filters;
+}
+
+function canCreate(role) {
+  return RA_ROLES.has(role || '') || MANAGER_ROLES.has(role || '');
+}
+
+function canReadSample(req, sample) {
+  const role = req.user?.role || '';
+  if (MANAGER_ROLES.has(role)) {
+    return true;
+  }
+  if (RA_ROLES.has(role)) {
+    return sample.createdBy?.toString?.() === req.user?.userId;
+  }
+  if (PCRWR_ROLES.has(role)) {
+    return (
+      sample.assignedSampler?.toString?.() === req.user?.userId ||
+      ['awaiting_collection', 'collecting', 'in_lab', 'results_ready'].includes(sample.status)
+    );
+  }
+  return false;
+}
+
+async function fetchEditableSample(id, req, res) {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    res.status(400).json({ msg: 'Invalid sample identifier' });
+    return null;
+  }
+  const sample = await WaterQualitySample.findById(id);
+  if (!sample) {
+    res.status(404).json({ msg: 'Sample not found' });
+    return null;
+  }
+  const role = req.user?.role || '';
+  if (needsTehsilScope(role)) {
+    const tehsilScope = await resolveUserTehsils(req.user);
+    if (tehsilScope.length === 0 || !tehsilMatches(tehsilScope, sample.planSnapshot?.tehsil)) {
+      res.status(403).json({ msg: 'Forbidden' });
+      return null;
+    }
+  }
+  return sample;
+}
+
+function auditUpdate(sample, user) {
+  sample.updatedBy = user?.userId || null;
+  sample.updatedByName = safeString(user?.name || '');
+}
+
+function buildStatusEvent(code, user, note) {
+  return {
+    code,
+    label: labelForStatus(code),
+    note: note || '',
+    tone: toneForStatus(code),
+    createdAt: new Date(),
+    createdBy: user?.userId,
+    createdByName: safeString(user?.name)
+  };
+}
+
+function toneForStatus(code) {
+  switch (code) {
+    case 'critical_flagged':
+      return 'critical';
+    case 'results_posted':
+    case 'closed':
+      return 'success';
+    default:
+      return 'info';
+  }
+}
+
+function labelForStatus(code) {
+  switch (code) {
+    case 'critical_flagged':
+      return 'Critical Flagged';
+    case 'assignment':
+      return 'Sampler Assigned';
+    case 'collection_started':
+      return 'Sampling Started';
+    case 'collection_complete':
+      return 'Sample Collected';
+    case 'in_lab':
+      return 'In Lab';
+    case 'results_posted':
+      return 'Lab Results Posted';
+    case 'closed':
+      return 'Closed';
+    case 'cancelled':
+      return 'Cancelled';
+    default:
+      return 'Updated';
+  }
+}
+
+function labelForRating(rating) {
+  switch (rating) {
+    case 'excellent':
+      return 'Excellent';
+    case 'good':
+      return 'Good';
+    case 'fair':
+      return 'Fair';
+    case 'poor':
+      return 'Poor';
+    default:
+      return 'Pending';
+  }
+}
+
+function parseObjectId(value) {
+  if (!value) {
+    return null;
+  }
+  if (mongoose.Types.ObjectId.isValid(value)) {
+    return new mongoose.Types.ObjectId(value);
+  }
+  return null;
+}
+
+function parseDate(raw) {
+  if (!raw) {
+    return null;
+  }
+  const date = new Date(raw);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function parseCoords(value) {
+  if (!value) {
+    return null;
+  }
+  if (typeof value === 'string') {
+    const text = value.trim();
+    if (!text) {
+      return null;
+    }
+    try {
+      return parseCoords(JSON.parse(text));
+    } catch {
+      const parts = text.split(',').map(Number);
+      if (parts.length >= 2 && parts.every(Number.isFinite)) {
+        return { lat: parts[0], lng: parts[1] };
+      }
+      return null;
+    }
+  }
+  if (Array.isArray(value) && value.length >= 2) {
+    const [lng, lat] = value.map(Number);
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      return { lat, lng };
+    }
+  }
+  if (typeof value === 'object') {
+    const lat = Number(value.lat ?? value.latitude);
+    const lng = Number(value.lng ?? value.longitude);
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      return { lat, lng };
+    }
+  }
+  return null;
+}
+
+function parseMetrics(raw) {
+  if (!raw) {
+    return {};
+  }
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw);
+      return typeof parsed === 'object' && parsed !== null ? parsed : {};
+    } catch (err) {
+      return {};
+    }
+  }
+  if (typeof raw === 'object') {
+    return { ...raw };
+  }
+  return {};
+}
+
+function normalizeLabMetrics(metrics) {
+  const output = { ...(metrics || {}) };
+  const mapping = {
+    tehsil: ['tehsil', 'tehsil_name'],
+    locationName: ['locationName', 'location', 'village', 'villageName'],
+    settlementsOperational: ['settlementsOperational', 'numberOfSettlementsOperational', 'settlements'],
+    waterStatus: ['waterStatus', 'status'],
+    color: ['color'],
+    taste: ['taste'],
+    odour: ['odour', 'odor'],
+    ec: ['ec', 'conductivity', 'electricalConductivity'],
+    turbidity: ['turbidity'],
+    physicalContamination: ['physicalContamination', 'physical'],
+    ph: ['ph'],
+    hco3: ['hco3', 'bicarbonate'],
+    co3: ['co3', 'carbonate'],
+    calcium: ['calcium', 'ca'],
+    magnesium: ['magnesium', 'mg'],
+    hardness: ['hardness', 'totalHardness'],
+    chloride: ['chloride', 'cl'],
+    sodium: ['sodium', 'na'],
+    potassium: ['potassium', 'k'],
+    sulfate: ['sulfate', 'so4'],
+    nitrate: ['nitrate', 'no3'],
+    tds: ['tds'],
+    phosphate: ['phosphate', 'po4'],
+    iron: ['iron', 'fe'],
+    nitrite: ['nitrite', 'no2'],
+    fluoride: ['fluoride', 'f'],
+    aluminum: ['aluminum', 'al'],
+    arsenic: ['arsenic', 'as'],
+    barium: ['barium', 'ba'],
+    cadmium: ['cadmium', 'cd'],
+    cobalt: ['cobalt', 'co'],
+    chromium: ['chromium', 'cr'],
+    copper: ['copper', 'cu'],
+    manganese: ['manganese', 'mn'],
+    molybdenum: ['molybdenum', 'mo'],
+    nickel: ['nickel', 'ni'],
+    lead: ['lead', 'pb'],
+    strontium: ['strontium', 'sr'],
+    zinc: ['zinc', 'zn'],
+    chemicalContamination: ['chemicalContamination'],
+    totalColiforms: ['totalColiforms', 'total_coliforms'],
+    fecalColiforms: ['fecalColiforms', 'fecal_coliforms'],
+    ecoli: ['ecoli', 'e_coli'],
+    biologicalContamination: ['biologicalContamination'],
+    remarks: ['remarks', 'labRemarks'],
+    safe: ['safe'],
+    unsafe: ['unsafe']
+  };
+
+  const canonical = {};
+  Object.entries(mapping).forEach(([targetKey, aliases]) => {
+    for (const alias of aliases) {
+      if (alias in output) {
+        canonical[targetKey] = output[alias];
+        break;
+      }
+    }
+  });
+
+  return canonical;
+}
+
+function mergeAttachments(existing = [], files = []) {
+  const safeExisting = Array.isArray(existing) ? existing : [];
+  const safeFiles = Array.isArray(files) ? files : [];
+  const next = safeExisting.slice();
+  safeFiles.forEach((file) => {
+    next.push({
+      storedName: path.posix.join('water-quality', file.filename),
+      originalName: file.originalname || '',
+      mimeType: file.mimetype || '',
+      size: file.size || 0
+    });
+  });
+  return next;
+}
+
+function cleanupFiles(files) {
+  if (!Array.isArray(files)) {
+    return;
+  }
+  files.forEach((file) => {
+    if (file?.path) {
+      fs.unlink(file.path, () => {});
+    }
+  });
+}
+
+function limitInt(value, fallback) {
+  const num = Number(value);
+  if (Number.isFinite(num) && num > 0) {
+    return Math.min(num, fallback);
+  }
+  return fallback;
+}
+
+function escapeRegex(value) {
+  return safeString(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function safeString(value) {
+  return (value ?? '').toString().trim();
+}
+
+function decorateAttachment(entry) {
+  return {
+    storedName: entry.storedName,
+    originalName: entry.originalName,
+    mimeType: entry.mimeType,
+    size: entry.size,
+    url: `/uploads/${entry.storedName}`.replace(/\\/g, '/').replace(/\/+/, '/uploads/')
+  };
+}
+
+function decorateAttachmentList(list) {
+  if (!Array.isArray(list)) {
+    return [];
+  }
+  return list.map(decorateAttachment);
+}
+
+function ensureDirectory(dirPath) {
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
+}
+
+function ensureSamplerOwnership(sample, user, res) {
+  const userId = toId(user?.userId);
+  const assignedSamplerId = toId(sample.assignedSampler);
+  if (!assignedSamplerId) {
+    res.status(409).json({ msg: 'Sample has not been assigned to a sampler yet.' });
+    return false;
+  }
+  if (assignedSamplerId !== userId) {
+    res.status(403).json({ msg: 'Sample is assigned to another sampler.' });
+    return false;
+  }
+  return true;
+}
+
+function serializeSample(source) {
+  if (!source) {
+    return null;
+  }
+  const doc = typeof source.toObject === 'function' ? source.toObject({ virtuals: false }) : source;
+  const result = { ...doc };
+
+  const planId = toId(result.plan) || toId(result.planSnapshot?.planId) || null;
+  const assignedSamplerId = toId(result.assignedSampler);
+
+  if (result.plan instanceof mongoose.Types.ObjectId || typeof result.plan === 'string') {
+    result.plan = planId;
+  } else if (result.plan && typeof result.plan === 'object' && !Array.isArray(result.plan)) {
+    const planObj = { ...result.plan };
+    planObj.id = toId(planObj._id) || planId;
+    delete planObj._id;
+    delete planObj.__v;
+    result.plan = planObj;
+  }
+
+  if (result.assignedSampler instanceof mongoose.Types.ObjectId || typeof result.assignedSampler === 'string') {
+    result.assignedSampler = assignedSamplerId;
+  } else if (result.assignedSampler && typeof result.assignedSampler === 'object' && !Array.isArray(result.assignedSampler)) {
+    const sampler = { ...result.assignedSampler };
+    sampler.id = toId(sampler._id) || assignedSamplerId;
+    delete sampler._id;
+    delete sampler.__v;
+    result.assignedSampler = sampler;
+  }
+
+  result.id = toId(result._id) || null;
+  result.planId = planId;
+  result.assignedSamplerId = assignedSamplerId;
+  result.createdBy = toId(result.createdBy);
+  result.updatedBy = toId(result.updatedBy);
+  result.attachments = decorateAttachmentList(result.attachments);
+
+  if (result.collection) {
+    result.collection = {
+      ...result.collection,
+      collectedBy: toId(result.collection.collectedBy),
+      attachments: decorateAttachmentList(result.collection.attachments)
+    };
+  }
+
+  if (result.labAnalysis) {
+    result.labAnalysis = {
+      ...result.labAnalysis,
+      analyst: toId(result.labAnalysis.analyst),
+      attachments: decorateAttachmentList(result.labAnalysis.attachments)
+    };
+  }
+
+  if (Array.isArray(result.statusHistory)) {
+    result.statusHistory = result.statusHistory.map((event) => ({
+      ...event,
+      createdBy: toId(event.createdBy)
+    }));
+  }
+
+  if (result.planSnapshot?.planId) {
+    result.planSnapshot.planId = toId(result.planSnapshot.planId);
+  }
+
+  delete result._id;
+  delete result.__v;
+
+  return result;
+}
+
+function toId(value) {
+  if (!value) {
+    return null;
+  }
+  if (typeof value === 'string') {
+    return value;
+  }
+  if (value instanceof mongoose.Types.ObjectId) {
+    return value.toString();
+  }
+  if (typeof value === 'object' && value._id) {
+    return toId(value._id);
+  }
+  if (typeof value.toString === 'function') {
+    const text = value.toString();
+    if (mongoose.Types.ObjectId.isValid(text)) {
+      return text;
+    }
+  }
+  return null;
+}
+
+function handleRouteError(res, err, fallback = 'Server error') {
+  if (err?.statusCode && err.statusCode !== 500) {
+    return res.status(err.statusCode).json({ msg: err.message || fallback });
+  }
+  return res.status(500).json({ msg: fallback, error: err?.message });
+}
+
+module.exports = router;

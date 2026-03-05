@@ -1,0 +1,6 @@
+.user-picker { display:flex; gap:8px; align-items:stretch; flex-direction:column; }
+.full-width { width:100%; }
+.actions { display:flex; gap:8px; align-items:center; }
+.muted { color: rgba(0,0,0,0.45); font-size:0.85rem; margin-left:6px; }
+.remarks-row { margin-top:8px; }
+.remarks-input { width:100%; border-radius:6px; padding:6px; border:1px solid rgba(0,0,0,0.12); font-size:0.95rem; }

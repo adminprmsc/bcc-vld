@@ -1,0 +1,72 @@
+<section class="profile-update-card">
+  <header class="card-header">
+    <div>
+      <h2>Update Profile</h2>
+      <p>Keep your contact details current so teams can reach you quickly.</p>
+    </div>
+  </header>
+
+  <form class="card-body" (ngSubmit)="save()" #profileForm="ngForm">
+    <div class="grid">
+      <label>
+        Full Name
+        <input type="text" [(ngModel)]="updatedUser.name" name="name" required placeholder="Enter your full name" />
+      </label>
+      <label>
+        Email Address
+        <input type="email" [(ngModel)]="updatedUser.email" name="email" required placeholder="name@example.com" />
+      </label>
+      <label>
+        Mobile Number
+        <input type="tel" [(ngModel)]="updatedUser.phone" name="phone" placeholder="03xxxxxxxxx" />
+      </label>
+      <label>
+        Role
+        <select [(ngModel)]="updatedUser.role" name="role">
+          <option value="Super Admin">Super Admin</option>
+          <option value="Admin">Admin</option>
+          <option value="DM Tehsil">DM Tehsil</option>
+          <option value="Infra Engineer">Infra Engineer</option>
+          <option value="CID">CID</option>
+          <option value="BCC Specialist">BCC Specialist</option>
+          <option value="BCC Officer Tehsil">BCC Officer Tehsil</option>
+          <option value="Citizen">Citizen</option>
+        </select>
+      </label>
+      <label>
+        CNIC
+        <input type="text" [(ngModel)]="updatedUser.cnic" name="cnic" placeholder="13 digit CNIC" maxlength="13" />
+      </label>
+      <label>
+        CNIC Expiry
+        <input type="date" [(ngModel)]="updatedUser.cnicExpiry" name="cnicExpiry" />
+      </label>
+      <label class="full-width">
+        Address
+        <input type="text" [(ngModel)]="updatedUser.address" name="address" placeholder="Mailing address" />
+      </label>
+      <label class="full-width">
+        New Password
+        <input type="password" [(ngModel)]="newPassword" name="newPassword" placeholder="Set a new password" minlength="6" />
+        <span class="field-hint">Leave blank to keep the current password.</span>
+      </label>
+      <label class="full-width">
+        Confirm Password
+        <input type="password" [(ngModel)]="confirmPassword" name="confirmPassword" placeholder="Re-enter new password" />
+      </label>
+    </div>
+
+    <div class="form-messages">
+      <p class="error" *ngIf="error">{{ error }}</p>
+      <p class="success" *ngIf="success">{{ success }}</p>
+    </div>
+
+    <footer class="card-footer">
+      <button type="button" class="cancel-btn" (click)="cancel()">Cancel</button>
+      <button type="submit" class="save-btn" [disabled]="saving || profileForm.invalid">
+        <span *ngIf="!saving">Save changes</span>
+        <span *ngIf="saving">Saving…</span>
+      </button>
+    </footer>
+  </form>
+</section>

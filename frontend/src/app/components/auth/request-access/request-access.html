@@ -1,0 +1,52 @@
+<section class="request-wrapper">
+  <div class="request-shell">
+    <div class="request-hero">
+      <img src="assets/lds-logo.png" alt="PRMSC" />
+      <h1>Request Portal Access</h1>
+      <p>Share your information and our administrators will review your request shortly.</p>
+    </div>
+    <div class="request-card">
+      <h2>Access Request</h2>
+      <p class="subtitle">Provide accurate details so we can verify your identity.</p>
+      <form (ngSubmit)="submit()" #requestForm="ngForm">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Full Name</mat-label>
+          <mat-icon matPrefix>badge</mat-icon>
+          <input matInput name="fullName" [(ngModel)]="fullName" required placeholder="Your name" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Email</mat-label>
+          <mat-icon matPrefix>mail</mat-icon>
+          <input matInput name="email" [(ngModel)]="email" required type="email" placeholder="Your email" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Phone</mat-label>
+          <mat-icon matPrefix>call</mat-icon>
+          <input matInput name="phone" [(ngModel)]="phone" required placeholder="Contact number" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Role Requested</mat-label>
+          <mat-icon matPrefix>groups</mat-icon>
+          <mat-select name="role" [(ngModel)]="role" required>
+            <mat-option *ngFor="let option of roleOptions" [value]="option">{{ option }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Tehsil / Office</mat-label>
+          <mat-icon matPrefix>location_city</mat-icon>
+          <input matInput name="tehsil" [(ngModel)]="tehsil" placeholder="Office or Tehsil (optional)" />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Additional Details</mat-label>
+          <textarea matInput name="message" [(ngModel)]="message" rows="3" placeholder="Share any supporting information"></textarea>
+        </mat-form-field>
+        <button mat-raised-button color="primary" class="submit-btn" type="submit" [disabled]="submitting">{{ submitting ? 'Submitting…' : 'Submit Request' }}</button>
+        <div *ngIf="error" class="error">{{ error }}</div>
+        <div *ngIf="success" class="success">{{ success }}</div>
+        <div class="back-link">
+          <a routerLink="/login">Back to sign in</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>

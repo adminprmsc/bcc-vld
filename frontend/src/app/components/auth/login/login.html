@@ -1,0 +1,35 @@
+
+<section class="auth-wrapper">
+	<div class="auth-shell">
+		<div class="auth-hero">
+			<img src="assets/lds-logo.png" alt="PRMSC" />
+			<h1>Welcome Back</h1>
+			<p>Sign in to coordinate requisitions, assign tasks, and monitor voluntary land donations.</p>
+		</div>
+		<div class="auth-card">
+			<h2>Account Login</h2>
+			<p class="subtitle">Use your registered credentials to continue.</p>
+			<form (ngSubmit)="onLogin()" #loginForm="ngForm">
+				<mat-form-field appearance="outline" class="full-width">
+					<mat-label>Email or Username</mat-label>
+					<mat-icon matPrefix>person</mat-icon>
+					<input matInput [(ngModel)]="email" name="email" required type="text" placeholder="Type your email" />
+				</mat-form-field>
+				<mat-form-field appearance="outline" class="full-width">
+					<mat-label>Password</mat-label>
+					<mat-icon matPrefix>lock</mat-icon>
+					<input matInput [(ngModel)]="password" name="password" required type="password" placeholder="Enter password" />
+				</mat-form-field>
+				<div class="form-meta">
+					<a class="link" routerLink="/forgot-password">Forgot password?</a>
+				</div>
+				<button mat-raised-button class="primary-btn" type="submit">Sign In</button>
+				<div *ngIf="error" class="error">{{ error }}</div>
+			</form>
+			<div class="signup-link">
+				<span>Need an account?</span>
+				<a routerLink="/request-access">Request access</a>
+			</div>
+		</div>
+	</div>
+</section>

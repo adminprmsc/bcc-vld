@@ -1,0 +1,259 @@
+<section class="land-activity-dashboard">
+  <header class="page-header">
+    <div class="titles">
+      <h1>Land Utilization Tracker</h1>
+      <p>Monitor construction, machinery deployment, and physical progress across acquired parcels.</p>
+    </div>
+    <div class="filters">
+      <label>
+        <span>Filter by Tehsil</span>
+        <input type="text" placeholder="e.g. Gujranwala" (input)="onFilterTehsil($any($event.target).value)" />
+      </label>
+      <label>
+        <span>Search</span>
+        <input type="search" placeholder="Search title or purpose" (input)="onSearchTerm($any($event.target).value)" />
+      </label>
+    </div>
+  </header>
+
+  <section class="metrics">
+    <article>
+      <span class="label">Active Sites</span>
+      <strong>{{ metrics().totalSites }}</strong>
+    </article>
+    <article>
+      <span class="label">Civil Structures Tracked</span>
+      <strong>{{ metrics().activeStructures }}</strong>
+    </article>
+    <article>
+      <span class="label">Machinery Logged</span>
+      <strong>{{ metrics().activeMachinery }}</strong>
+    </article>
+    <article>
+      <span class="label">Last Progress Update</span>
+      <strong>{{ metrics().latestProgressDate || '—' }}</strong>
+    </article>
+  </section>
+
+  <section class="map-section">
+    <app-map-workspace
+      class="map-view"
+      [plans]="mapPlans()"
+      [highlightedPlanId]="highlightedPlanId()"
+    ></app-map-workspace>
+  </section>
+
+  <section class="content-region">
+    <aside class="site-list">
+      <header>
+        <h2>Utilization Sites</h2>
+        <span>{{ filteredRequisitions().length }} showing</span>
+      </header>
+      <div class="site-scroll" *ngIf="filteredRequisitions().length; else noSites">
+        <button
+          type="button"
+          class="site-card"
+          *ngFor="let req of filteredRequisitions(); trackBy: trackById"
+          (click)="onSelectRequisition(req)"
+          [class.is-active]="selectedRequisition()?._id === req._id"
+        >
+          <span class="title">{{ req.title }}</span>
+          <span class="tehsil">{{ req.tehsil }}</span>
+          <span class="phase">{{ req.landUtilization?.overview?.phase || 'Phase TBD' }}</span>
+          <span class="last-update">Updated {{ (req.landUtilization?.updatedAt | date:'mediumDate') || 'recently' }}</span>
+        </button>
+      </div>
+      <ng-template #noSites>
+        <p class="empty-state">No utilization records yet. Add structures, machinery or progress updates to begin tracking.</p>
+      </ng-template>
+    </aside>
+
+    <section class="details" *ngIf="selectedRequisition(); else selectPrompt">
+      <header class="detail-header">
+        <div>
+          <h2>{{ selectedRequisition()?.title }}</h2>
+          <p>{{ selectedRequisition()?.purpose }}</p>
+          <small>Tehsil: {{ selectedRequisition()?.tehsil }}</small>
+        </div>
+        <div class="phase-chip">{{ selectedRequisition()?.landUtilization?.overview?.phase || 'Phase TBD' }}</div>
+      </header>
+
+      <section class="form-grid">
+        <form [formGroup]="overviewForm" (ngSubmit)="onOverviewSubmit()" class="card">
+          <header>
+            <h3>Construction Overview</h3>
+            <p>Maintain the current phase and upcoming milestones for rapid status checks.</p>
+          </header>
+          <label>
+            <span>Current Phase</span>
+            <input type="text" formControlName="phase" placeholder="e.g. Superstructure" />
+          </label>
+          <label>
+            <span>Summary</span>
+            <textarea rows="3" formControlName="summary" placeholder="Key progress notes"></textarea>
+          </label>
+          <label>
+            <span>Next Milestone</span>
+            <input type="text" formControlName="nextMilestone" placeholder="Upcoming target" />
+          </label>
+          <button type="submit">Save Overview</button>
+        </form>
+
+        <form [formGroup]="structureForm" (ngSubmit)="onStructureSubmit()" class="card">
+          <header>
+            <h3>Log Civil Structure</h3>
+            <p>Capture tanks, reservoirs, community halls and other on-site facilities. Submit each entry separately to build a full inventory.</p>
+          </header>
+          <label>
+            <span>Name *</span>
+            <input type="text" formControlName="name" placeholder="Structure label" />
+          </label>
+          <label>
+            <span>Category</span>
+            <input type="text" formControlName="category" placeholder="e.g. Overhead Tank" />
+          </label>
+          <label>
+            <span>Status</span>
+            <input type="text" formControlName="status" placeholder="e.g. 60% complete" />
+          </label>
+          <label>
+            <span>Description</span>
+            <textarea rows="2" formControlName="description" placeholder="Key specs, dimensions"></textarea>
+          </label>
+          <label>
+            <span>Attributes (JSON)</span>
+            <textarea rows="2" formControlName="attributesJson" placeholder='{"capacity":"15000 L"}'></textarea>
+          </label>
+          <label class="file-input">
+            <span>Attach Photos</span>
+            <input type="file" multiple (change)="onStructureFilesChange($event)" />
+          </label>
+          <button type="submit">Record Structure</button>
+        </form>
+
+        <form [formGroup]="machineryForm" (ngSubmit)="onMachinerySubmit()" class="card">
+          <header>
+            <h3>Register Machinery</h3>
+            <p>Track pumps, generators and other deployed equipment. Add machines one-by-one so the list stays organized.</p>
+          </header>
+          <label>
+            <span>Name *</span>
+            <input type="text" formControlName="name" placeholder="Machine label" />
+          </label>
+          <label>
+            <span>Type</span>
+            <input type="text" formControlName="type" placeholder="e.g. Tube well pump" />
+          </label>
+          <label>
+            <span>Status</span>
+            <input type="text" formControlName="status" placeholder="Operational / Idle" />
+          </label>
+          <label>
+            <span>Capacity</span>
+            <input type="text" formControlName="capacity" placeholder="e.g. 10 HP" />
+          </label>
+          <label>
+            <span>Manufacturer</span>
+            <input type="text" formControlName="manufacturer" placeholder="OEM" />
+          </label>
+          <label>
+            <span>Attributes (JSON)</span>
+            <textarea rows="2" formControlName="attributesJson" placeholder='{"fuel":"Diesel"}'></textarea>
+          </label>
+          <label class="file-input">
+            <span>Attach Photos</span>
+            <input type="file" multiple (change)="onMachineryFilesChange($event)" />
+          </label>
+          <button type="submit">Log Machinery</button>
+        </form>
+
+        <form [formGroup]="progressForm" (ngSubmit)="onProgressSubmit()" class="card">
+          <header>
+            <h3>Physical Progress</h3>
+            <p>Document milestones with on-ground photos and completion percentages.</p>
+          </header>
+          <label>
+            <span>Status *</span>
+            <input type="text" formControlName="status" placeholder="e.g. Plinth completed" />
+          </label>
+          <label>
+            <span>Description</span>
+            <textarea rows="3" formControlName="description" placeholder="Observations, delays, approvals"></textarea>
+          </label>
+          <label>
+            <span>Progress Date</span>
+            <input type="date" formControlName="progressDate" />
+          </label>
+          <label>
+            <span>Completion %</span>
+            <input type="number" min="0" max="100" formControlName="completionPercentage" />
+          </label>
+          <label class="file-input">
+            <span>Attach Site Photos</span>
+            <input type="file" multiple (change)="onProgressFilesChange($event)" />
+          </label>
+          <button type="submit">Add Progress Update</button>
+        </form>
+      </section>
+
+      <section class="records">
+        <div class="record-column">
+          <h3>Civil Structures</h3>
+          <article *ngFor="let structure of selectedRequisition()?.landUtilization?.civilStructures">
+            <header>
+              <strong>{{ structure.name }}</strong>
+              <span>{{ structure.status }}</span>
+            </header>
+            <p>{{ structure.description || 'No description provided.' }}</p>
+            <small>Updated {{ structure.updatedAt | date:'medium' }}</small>
+            <pre *ngIf="structure.attributes" class="json-dump">{{ structure.attributes | json }}</pre>
+          </article>
+        </div>
+        <div class="record-column">
+          <h3>Machinery</h3>
+          <article *ngFor="let machine of selectedRequisition()?.landUtilization?.machinery">
+            <header>
+              <strong>{{ machine.name }}</strong>
+              <span>{{ machine.status }}</span>
+            </header>
+            <p>
+              <span *ngIf="machine.type">Type: {{ machine.type }} · </span>
+              <span *ngIf="machine.capacity">Capacity: {{ machine.capacity }} · </span>
+              <span *ngIf="machine.manufacturer">Maker: {{ machine.manufacturer }}</span>
+            </p>
+            <small>Updated {{ machine.updatedAt | date:'medium' }}</small>
+            <pre *ngIf="machine.attributes" class="json-dump">{{ machine.attributes | json }}</pre>
+          </article>
+        </div>
+        <div class="record-column">
+          <h3>Progress Timeline</h3>
+          <article *ngFor="let progress of selectedRequisition()?.landUtilization?.progressUpdates">
+            <header>
+              <strong>{{ progress.status }}</strong>
+              <span>{{ progress.completionPercentage != null ? progress.completionPercentage + '%' : '—' }}</span>
+            </header>
+            <p>{{ progress.description || 'No narrative provided.' }}</p>
+            <small>{{ progress.progressDate | date:'mediumDate' }}</small>
+          </article>
+        </div>
+      </section>
+
+      <section class="gallery" *ngIf="galleryForSelected().length">
+        <h3>Site Gallery</h3>
+        <div class="gallery-grid">
+          <figure *ngFor="let photo of galleryForSelected()">
+            <img [src]="'http://localhost:3000/uploads/' + photo" [alt]="photo" loading="lazy" />
+            <figcaption>{{ photo }}</figcaption>
+          </figure>
+        </div>
+      </section>
+    </section>
+
+    <ng-template #selectPrompt>
+      <section class="empty-detail">
+        <h2>Select a site to begin</h2>
+        <p>Choose any land parcel from the left list to review its construction activities and log fresh updates.</p>
+      </section>
+    </ng-template>
+  </section>
+</section>

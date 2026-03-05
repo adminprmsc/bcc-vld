@@ -1,0 +1,363 @@
+<div class="requisition-overlay">
+	<div class="requisition-modal">
+		<header class="modal-header">
+			<h2 class="modal-title">Create Requisition</h2>
+			<button class="close-btn" type="button" (click)="onClose()" aria-label="Close form">
+				&times;
+			</button>
+		</header>
+
+		<form class="modal-body" (ngSubmit)="onSubmit()" #reqForm="ngForm">
+			<section class="form-section">
+				<h3 class="section-title">Request Basics</h3>
+				<div class="form-grid">
+					<label class="form-field">
+						<span>Title<span class="required">*</span></span>
+						<input [(ngModel)]="title" name="title" required />
+					</label>
+					<label class="form-field">
+						<span>Purpose / Proposed Activity<span class="required">*</span></span>
+						<input [(ngModel)]="purpose" name="purpose" required />
+					</label>
+								<label class="form-field">
+									<span>Division<span class="required">*</span></span>
+									<select [(ngModel)]="division" name="division" required (change)="onDivisionChange()">
+										<option value="" disabled>Select a division</option>
+							<option *ngFor="let item of divisions" [value]="item.division">{{ item.division }}</option>
+						</select>
+					</label>
+					<label class="form-field">
+						<span>District<span class="required">*</span></span>
+									<select [(ngModel)]="district" name="district" required (change)="onDistrictChange()" [disabled]="!division">
+										<option value="" disabled>Select a district</option>
+							<option *ngFor="let item of availableDistricts" [value]="item.name">{{ item.name }}</option>
+						</select>
+					</label>
+					<label class="form-field">
+						<span>Tehsil<span class="required">*</span></span>
+									<select [(ngModel)]="tehsil" name="tehsil" required [disabled]="!district">
+										<option value="" disabled>Select a tehsil</option>
+							<option *ngFor="let name of availableTehsils" [value]="name">{{ name }}</option>
+						</select>
+					</label>
+					<label class="form-field">
+						<span>Priority<span class="required">*</span></span>
+						<select [(ngModel)]="priority" name="priority" required>
+										<option value="" disabled>Select priority</option>
+							<option value="Low">Low</option>
+							<option value="Medium">Medium</option>
+							<option value="High">High</option>
+						</select>
+					</label>
+					<label class="form-field">
+						<span>Required Date<span class="required">*</span></span>
+						<input [(ngModel)]="requiredDate" name="requiredDate" type="date" required />
+					</label>
+				</div>
+			</section>
+
+			<section class="form-section">
+				<h3 class="section-title">Land Details</h3>
+				<div class="form-grid">
+					<label class="form-field">
+						<span>Land Breadth (ft)<span class="required">*</span></span>
+									<input [(ngModel)]="landBreadth" name="landBreadth" type="number" min="0" required (ngModelChange)="onDimensionsChange()" />
+					</label>
+					<label class="form-field">
+						<span>Land Depth (ft)<span class="required">*</span></span>
+									<input [(ngModel)]="landDepth" name="landDepth" type="number" min="0" required (ngModelChange)="onDimensionsChange()" />
+					</label>
+					<label class="form-field">
+						<span>Land Type<span class="required">*</span></span>
+						<select [(ngModel)]="landType" name="landType" required>
+										<option value="" disabled>Select land type</option>
+							<option value="Govt Land">Govt Land</option>
+							<option value="Private Land">Private Land</option>
+						</select>
+					</label>
+					<div class="form-field readonly-field">
+						<span>Calculated Area</span>
+									<p>{{ areaSummary || 'Enter breadth and depth for automatic area' }}</p>
+					</div>
+					<label class="form-field">
+						<span>Estimated Value (PKR)</span>
+						<input [(ngModel)]="estimatedValue" name="estimatedValue" type="number" min="0" />
+					</label>
+					<label class="form-field">
+						<span>Remarks</span>
+						<input [(ngModel)]="remarks" name="remarks" />
+					</label>
+				</div>
+			</section>
+
+			<section class="form-section" *ngIf="landType">
+				<h3 class="section-title">Land Due Diligence Checklist</h3>
+				<p class="section-hint">
+					Capture the questionnaire responses mandated for
+					{{ landType === 'Govt Land' ? 'government' : 'private' }} land. Reference any supporting PDFs using the
+					"Supporting Documents" uploader above.
+				</p>
+				<div *ngIf="landType === 'Govt Land'; else privateDueDiligence" class="due-diligence-grid">
+					<div class="due-question" *ngFor="let q of govtLandQuestions">
+						<label class="due-label">{{ q.id }}. {{ q.prompt }}</label>
+						<ng-container *ngIf="q.options?.length; else govtNoOptions">
+							<ng-container *ngIf="isYesNoQuestion(q); else govtDropdown">
+								<div class="option-group">
+									<label
+										class="option-pill"
+										*ngFor="let opt of q.options"
+										[class.selected]="govtLandResponses[q.id] === opt"
+									>
+										<input
+											type="radio"
+											[name]="'govt-' + q.id"
+											[value]="opt"
+											[(ngModel)]="govtLandResponses[q.id]"
+										/>
+										<span>{{ opt }}</span>
+									</label>
+								</div>
+							</ng-container>
+							<ng-template #govtDropdown>
+								<select
+									class="modal-input"
+									[(ngModel)]="govtLandResponses[q.id]"
+									[name]="'govt-' + q.id"
+								>
+									<option value="">Select option</option>
+									<option *ngFor="let opt of q.options" [value]="opt">{{ opt }}</option>
+								</select>
+							</ng-template>
+						</ng-container>
+						<ng-template #govtNoOptions>
+							<ng-container [ngSwitch]="q.type">
+								<textarea
+									*ngSwitchCase="'textarea'"
+									class="modal-textarea"
+									rows="3"
+									[(ngModel)]="govtLandResponses[q.id]"
+									[name]="'govt-' + q.id"
+									[placeholder]="q.placeholder || 'Enter response'"
+								></textarea>
+								<input
+									*ngSwitchCase="'number'"
+									class="modal-input"
+									type="number"
+									[min]="0"
+									step="0.01"
+									[(ngModel)]="govtLandResponses[q.id]"
+									[name]="'govt-' + q.id"
+									[placeholder]="q.placeholder || 'Enter value'"
+								/>
+								<input
+									*ngSwitchCase="'currency'"
+									class="modal-input"
+									type="number"
+									[min]="0"
+									step="0.01"
+									[(ngModel)]="govtLandResponses[q.id]"
+									[name]="'govt-' + q.id"
+									[placeholder]="q.placeholder || 'Amount in PKR'"
+								/>
+								<input
+									*ngSwitchCase="'percent'"
+									class="modal-input"
+									type="number"
+									[min]="0"
+									step="0.01"
+									[(ngModel)]="govtLandResponses[q.id]"
+									[name]="'govt-' + q.id"
+									[placeholder]="q.placeholder || 'Enter percentage'"
+								/>
+								<input
+									*ngSwitchDefault
+									class="modal-input"
+									type="text"
+									[(ngModel)]="govtLandResponses[q.id]"
+									[name]="'govt-' + q.id"
+									[placeholder]="q.placeholder || 'Enter response'"
+								/>
+							</ng-container>
+						</ng-template>
+						<small *ngIf="q.helper" class="due-helper">{{ q.helper }}</small>
+					</div>
+				</div>
+				<ng-template #privateDueDiligence>
+					<div class="due-diligence-grid">
+						<div class="due-question" *ngFor="let q of privateLandQuestions">
+							<label class="due-label">{{ q.id }}. {{ q.prompt }}</label>
+						<ng-container *ngIf="q.options?.length; else privateNoOptions">
+							<ng-container *ngIf="isYesNoQuestion(q); else privateDropdown">
+								<div class="option-group">
+									<label
+										class="option-pill"
+										*ngFor="let opt of q.options"
+										[class.selected]="privateLandResponses[q.id] === opt"
+									>
+											<input
+												type="radio"
+												[name]="'private-' + q.id"
+												[value]="opt"
+												[(ngModel)]="privateLandResponses[q.id]"
+											/>
+											<span>{{ opt }}</span>
+										</label>
+									</div>
+								</ng-container>
+								<ng-template #privateDropdown>
+									<select
+										class="modal-input"
+										[(ngModel)]="privateLandResponses[q.id]"
+										[name]="'private-' + q.id"
+									>
+										<option value="">Select option</option>
+										<option *ngFor="let opt of q.options" [value]="opt">{{ opt }}</option>
+									</select>
+								</ng-template>
+							</ng-container>
+							<ng-template #privateNoOptions>
+								<ng-container [ngSwitch]="q.type">
+									<textarea
+										*ngSwitchCase="'textarea'"
+										class="modal-textarea"
+										rows="3"
+										[(ngModel)]="privateLandResponses[q.id]"
+										[name]="'private-' + q.id"
+										[placeholder]="q.placeholder || 'Enter response'"
+									></textarea>
+									<input
+										*ngSwitchCase="'number'"
+										class="modal-input"
+										type="number"
+										[min]="0"
+										step="0.01"
+										[(ngModel)]="privateLandResponses[q.id]"
+										[name]="'private-' + q.id"
+										[placeholder]="q.placeholder || 'Enter value'"
+									/>
+									<input
+										*ngSwitchCase="'currency'"
+										class="modal-input"
+										type="number"
+										[min]="0"
+										step="0.01"
+										[(ngModel)]="privateLandResponses[q.id]"
+										[name]="'private-' + q.id"
+										[placeholder]="q.placeholder || 'Amount in PKR'"
+									/>
+									<input
+										*ngSwitchCase="'percent'"
+										class="modal-input"
+										type="number"
+										[min]="0"
+										step="0.01"
+										[(ngModel)]="privateLandResponses[q.id]"
+										[name]="'private-' + q.id"
+										[placeholder]="q.placeholder || 'Enter percentage'"
+									/>
+									<input
+										*ngSwitchDefault
+										class="modal-input"
+										type="text"
+										[(ngModel)]="privateLandResponses[q.id]"
+										[name]="'private-' + q.id"
+										[placeholder]="q.placeholder || 'Enter response'"
+									/>
+								</ng-container>
+							</ng-template>
+							<small *ngIf="q.helper" class="due-helper">{{ q.helper }}</small>
+						</div>
+					</div>
+				</ng-template>
+			</section>
+
+			<section class="form-section">
+				<h3 class="section-title">Location & Attachments</h3>
+				<div class="location-wrapper">
+					<div class="form-field full">
+						<div class="map-header">
+							<span>Site Map<span class="required">*</span></span>
+							<button
+								type="button"
+								class="map-toggle-btn"
+								(click)="isMapExpanded ? closeMapFullscreen($event) : openMapFullscreen($event)"
+							>
+								<mat-icon>{{ isMapExpanded ? 'close_fullscreen' : 'open_in_full' }}</mat-icon>
+								{{ isMapExpanded ? 'Close enlarged view' : 'Click to enlarge map' }}
+							</button>
+						</div>
+						<input type="hidden" name="siteLocation" [(ngModel)]="location" required />
+						<div class="map-backdrop" *ngIf="isMapExpanded" (click)="closeMapFullscreen($event)"></div>
+						<div class="map-shell" [class.expanded]="isMapExpanded">
+							<div class="map-toolbar">
+									<button type="button" class="map-btn" (click)="mapWorkspace?.beginDrawing('marker')">
+										<mat-icon>place</mat-icon>
+										Drop pushpin
+									</button>
+									<button type="button" class="map-btn" (click)="mapWorkspace?.beginDrawing('polygon')">
+										<mat-icon>timeline</mat-icon>
+										Draw polygon
+									</button>
+									<button type="button" class="map-btn" (click)="mapWorkspace?.beginDrawing('polyline')">
+										<mat-icon>show_chart</mat-icon>
+										Draw path
+									</button>
+									<button type="button" class="map-btn" (click)="mapWorkspace?.clearDraft()" [disabled]="!geometrySummaries.length">
+										<mat-icon>layers_clear</mat-icon>
+										Clear drawings
+									</button>
+								</div>
+								<app-map-workspace
+									#mapWorkspace
+									class="map-canvas"
+									[draftFeature]="draftFeature"
+									(draftFeatureChange)="onDraftFeatureChange($event)"
+									(mapReady)="onMapWorkspaceReady($event)">
+								</app-map-workspace>
+						</div>
+						<small class="map-hint" aria-live="polite">
+							<mat-icon>location_on</mat-icon>
+							<span *ngIf="location; else locationPrompt">Selected: {{ location }}</span>
+							<ng-template #locationPrompt>Click once to drop a pushpin, or use the drawing tools to outline the site.</ng-template>
+						</small>
+						<div class="map-summary" *ngIf="geometrySummaries.length">
+							<h4>Captured geometry</h4>
+							<ul>
+								<li *ngFor="let summary of geometrySummaries">{{ summary }}</li>
+							</ul>
+						</div>
+					</div>
+					<label class="form-field full">
+						<span>Supporting Documents</span>
+						<input name="attachments" type="file" multiple (change)="onFileChange($event)" />
+					</label>
+				</div>
+			</section>
+
+			<section class="form-section">
+				<h3 class="section-title">Supporting Narrative</h3>
+				<label class="form-field full">
+					<span>Description<span class="required">*</span></span>
+					<textarea [(ngModel)]="description" name="description" rows="4" required></textarea>
+				</label>
+			</section>
+
+			<footer class="form-actions">
+				<button class="draft-btn" type="button" (click)="onSaveDraft()">Save Draft</button>
+				<button class="submit-btn" type="submit" [disabled]="reqForm.invalid">Submit Requisition</button>
+			</footer>
+		</form>
+
+		<div class="exit-overlay" *ngIf="showExitPrompt">
+			<div class="exit-dialog" role="dialog" aria-modal="true" aria-labelledby="exitPromptTitle">
+				<h3 id="exitPromptTitle">Save draft before closing?</h3>
+				<p>Your entries will be lost if you discard them.</p>
+				<div class="exit-actions">
+					<button type="button" class="exit-primary" (click)="confirmSaveDraftAndClose()">Save draft &amp; close</button>
+					<button type="button" class="exit-danger" (click)="confirmDiscard()">Discard draft</button>
+					<button type="button" class="exit-secondary" (click)="cancelExitPrompt()">Continue editing</button>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

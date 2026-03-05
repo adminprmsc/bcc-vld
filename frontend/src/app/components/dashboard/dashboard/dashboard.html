@@ -1,0 +1,116 @@
+<div class="role-dashboard" [class.is-loading]="loading">
+	<section class="hero">
+		<div class="hero-text">
+			<p class="hero-greeting">Welcome Back {{ userName }}</p>
+			<h2>{{ descriptor.title }}</h2>
+			<p class="hero-tagline">{{ descriptor.tagline }}</p>
+		</div>
+		<div class="hero-highlight">
+			<span class="material-icons">task_alt</span>
+			<div>
+				<p class="highlight-label">Focus</p>
+				<p class="highlight-copy">{{ descriptor.highlight }}</p>
+			</div>
+		</div>
+	</section>
+
+	<section class="metrics-grid">
+		<article class="metric-card accent-{{ metric.accent }}" *ngFor="let metric of metrics">
+			<h3>{{ metric.label }}</h3>
+			<p>{{ metric.value }}</p>
+		</article>
+	</section>
+
+	<section class="consultant-cta" *ngIf="role === 'EDCS Consultant' || role === 'EDCS User' || role === 'Tehsil Manager'">
+		<div>
+			<h3>PRMSC Red Book Workspace</h3>
+			<p>Review consultant-submitted assets, log O&amp;M actions, and keep the Red Book maintenance history current.</p>
+		</div>
+		<button type="button" (click)="openConsultantWorkspace()">Open PRMSC Red Book</button>
+	</section>
+
+	<section class="consultant-cta" *ngIf="role === 'RA Environment' || role === 'PCRWR Sampler' || role === 'PCRWR Lab' || role === 'Tehsil Manager'">
+		<div>
+			<h3>Water Quality Command Center</h3>
+			<p>Monitor critical assets, track PCRWR field sampling, and publish potability results from a single workspace.</p>
+		</div>
+		<button type="button" (click)="openWaterQualityWorkspace()">Open Water Quality Dashboard</button>
+	</section>
+
+	<section class="focus-statuses" *ngIf="descriptor.focusStatuses.length">
+		<span class="focus-label">Primary statuses</span>
+			<div class="focus-chips">
+				<span class="focus-chip" *ngFor="let status of descriptor.focusStatuses">{{ status | titlecase }}</span>
+		</div>
+	</section>
+
+	<section class="filters-panel">
+		<div class="filter-field">
+			<label>Status</label>
+			<select [(ngModel)]="filterStatus">
+				<option value="">All statuses</option>
+				<option *ngFor="let status of uniqueStatuses" [value]="status.toLowerCase()">{{ status }}</option>
+			</select>
+		</div>
+		<div class="filter-field search">
+			<label>Search</label>
+			<input type="text" [(ngModel)]="searchTerm" placeholder="Search by title or purpose" />
+		</div>
+		<div class="filter-toggle">
+			<label class="toggle-label">
+				<input type="checkbox" [checked]="showMineOnly" (change)="toggleMineOnly()" />
+				Show only my assignments
+			</label>
+		</div>
+	</section>
+
+	<section class="table-panel">
+		<header>
+			<div>
+				<h3>Workflow queue</h3>
+				<p>{{ filteredRequisitions.length }} record(s) match the current filters.</p>
+			</div>
+		</header>
+		<div class="table-scroll">
+			<table>
+				<thead>
+					<tr>
+						<th>Title</th>
+						<th>Status</th>
+						<th>Required Date</th>
+						<th>Requested By</th>
+						<th>Assigned To</th>
+						<th>Last Updated</th>
+						<th>Land Area</th>
+						<th>Action</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr *ngFor="let req of filteredRequisitions | slice:0:15">
+						<td>
+							<div class="cell-title">{{ req.title }}</div>
+							<div class="cell-subtitle">{{ req.purpose }}</div>
+						</td>
+						<td><span class="status-pill {{ statusBadgeClass(req.status) }}">{{ req.status || 'Pending' }}</span></td>
+						<td>{{ req.requiredDate ? (req.requiredDate | date:'mediumDate') : '—' }}</td>
+						<td>{{ req.requestedBy?.name || '—' }}</td>
+						<td>{{ formatAssignee(req) }}</td>
+						<td>{{ req.lastUpdated ? (req.lastUpdated | date:'medium') : '—' }}</td>
+						<td>{{ formatArea(req) }}</td>
+						<td>
+							<button type="button" class="link-action" (click)="openRequisition(req)">Open</button>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+		<div class="empty-state" *ngIf="filteredRequisitions.length === 0">
+			<span class="material-icons">inventory_2</span>
+			<p>No requisitions match the selected filters.</p>
+		</div>
+	</section>
+
+	<section *ngIf="isAdminRole" class="admin-panel">
+		<app-admin-user-management></app-admin-user-management>
+	</section>
+</div>

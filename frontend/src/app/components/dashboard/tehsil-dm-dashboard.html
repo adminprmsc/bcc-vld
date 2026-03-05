@@ -1,0 +1,317 @@
+<div class="dm-dashboard" [class.is-loading]="loading">
+  <section class="hero">
+    <div class="hero-copy">
+      <h2>Tehsil DM Workspace</h2>
+      <p>Monitor voluntary land requests, analyze status, and collaborate with field teams in real-time.</p>
+    </div>
+    <div class="hero-actions">
+      <button type="button" class="btn btn-primary" (click)="onCreateRequisition()">
+        <span class="material-icons">add_circle</span>
+        New Requisition
+      </button>
+      <button type="button" class="btn btn-ghost" (click)="onViewRequisitions()">
+        <span class="material-icons">table_view</span>
+        View All
+      </button>
+      <button type="button" class="btn btn-neutral" (click)="openLandActivityDashboard()">
+        <span class="material-icons">map</span>
+        Utilization Dashboard
+      </button>
+    </div>
+  </section>
+
+  <section class="metrics-grid">
+    <article class="metric-card accent-{{ metric.accent }}" *ngFor="let metric of metrics">
+      <div class="metric-icon">
+        <span class="material-icons">{{ metric.icon }}</span>
+      </div>
+      <div class="metric-body">
+        <span class="metric-label">{{ metric.label }}</span>
+        <span class="metric-value">{{ metric.value }}</span>
+        <span class="metric-hint" *ngIf="metric.hint">{{ metric.hint }}</span>
+      </div>
+    </article>
+  </section>
+
+  <section class="content-grid">
+    <article class="panel map-panel">
+      <header>
+        <div>
+          <h3>Operations Map</h3>
+          <p>Review active requisition footprints overlaid on the map, or sketch new shapes to capture field notes.</p>
+        </div>
+        <button type="button" class="btn btn-neutral" (click)="resetDrawnShapes()" [disabled]="!selectedGeometrySummary && !hasDrawings()">
+          <span class="material-icons">layers_clear</span>
+          Clear Shapes
+        </button>
+      </header>
+      <div class="map-summary" *ngIf="selectedGeometrySummary">{{ selectedGeometrySummary }}</div>
+      <div class="map-toolbar">
+        <form class="map-toolbar-form" (ngSubmit)="onCoordinateSearchSubmit('dashboard')" novalidate>
+          <label class="toolbar-label" for="dm-map-search">Go to Coordinates</label>
+          <div class="map-toolbar-field">
+            <input
+              id="dm-map-search"
+              name="dmMapSearch"
+              type="text"
+              [(ngModel)]="mapControls.dashboard.query"
+              (ngModelChange)="onCoordinateInput('dashboard')"
+              placeholder="Lat Lon or Lon Lat"
+              autocapitalize="off"
+              autocorrect="off"
+              spellcheck="false"
+            />
+            <button type="submit" class="btn btn-ghost">
+              <span class="material-icons">travel_explore</span>
+              Fly
+            </button>
+          </div>
+        </form>
+        <div class="map-toolbar-select">
+          <label class="toolbar-label" for="dm-map-basemap">Base Layer</label>
+          <select
+            id="dm-map-basemap"
+            name="dmMapBasemap"
+            [(ngModel)]="selectedBasemap"
+            (ngModelChange)="onBasemapChange($event)"
+          >
+            <option *ngFor="let option of mapBasemapOptions" [ngValue]="option.id">{{ option.label }}</option>
+          </select>
+        </div>
+        <button type="button" class="btn btn-neutral locate-button" (click)="onLocateUser('dashboard')">
+          <span class="material-icons">my_location</span>
+          Locate Me
+        </button>
+      </div>
+      <p class="map-feedback error" *ngIf="mapControls.dashboard.error">{{ mapControls.dashboard.error }}</p>
+      <p class="map-feedback" *ngIf="!mapControls.dashboard.error && mapControls.dashboard.feedback">{{ mapControls.dashboard.feedback }}</p>
+      <app-map-workspace
+        #dashboardMap
+        class="map-canvas"
+        [plans]="mapPlans"
+        [showControls]="false"
+        [basemap]="selectedBasemap"
+      ></app-map-workspace>
+    </article>
+
+    <article class="panel chart-panel">
+      <header>
+        <h3>Workflow Trend</h3>
+        <p>Monthly requisitions submitted across your tehsil.</p>
+      </header>
+      <canvas id="monthlyRequestsChart"></canvas>
+    </article>
+  </section>
+
+  <section class="filters-panel">
+    <div class="filter-field">
+      <label>Status</label>
+      <select [(ngModel)]="filterStatus">
+        <option value="">All Statuses</option>
+        <option value="pending">Pending</option>
+        <option value="assign">In Progress</option>
+        <option value="approved">Approved</option>
+        <option value="rejected">Rejected</option>
+      </select>
+    </div>
+    <div class="filter-field">
+      <label>Tehsil</label>
+      <select [(ngModel)]="filterTehsil">
+        <option value="">All Tehsils</option>
+        <option *ngFor="let t of uniqueTehsils" [value]="t.toLowerCase()">{{ t }}</option>
+      </select>
+    </div>
+    <div class="filter-field search">
+      <label>Search</label>
+      <input type="text" [(ngModel)]="searchTerm" placeholder="Search by title or purpose" />
+    </div>
+    <button type="button" class="btn btn-reset" (click)="filterStatus=''; filterTehsil=''; searchTerm=''">
+      <span class="material-icons">refresh</span>
+      Reset
+    </button>
+  </section>
+
+  <section class="table-panel" id="requisitions-table">
+    <header>
+      <div>
+        <h3>Recent Requisitions</h3>
+        <p>{{ filteredRequisitions.length }} record(s) match the current filters.</p>
+      </div>
+    </header>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Tehsil</th>
+            <th>Status</th>
+            <th>Required Date</th>
+            <th>Land Area</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let req of filteredRequisitions | slice:0:12">
+            <td>
+              <div class="cell-title">{{ req.title }}</div>
+              <small class="cell-subtitle">{{ req.purpose }}</small>
+            </td>
+            <td>{{ req.tehsil || '—' }}</td>
+            <td><span class="status-pill {{ statusBadgeClass(req.status) }}">{{ req.status || 'Pending' }}</span></td>
+            <td>{{ req.requiredDate ? (req.requiredDate | date:'mediumDate') : '—' }}</td>
+            <td>{{ formatArea(req) }}</td>
+            <td>
+              <button type="button" class="btn btn-link" (click)="viewRequisition(req)">
+                <span class="material-icons">open_in_new</span>
+                Details
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="empty-state" *ngIf="filteredRequisitions.length === 0">
+      <span class="material-icons">filter_alt_off</span>
+      <p>No requisitions match the selected filters.</p>
+    </div>
+  </section>
+
+  <app-requisition-create *ngIf="showCreateModal" (close)="showCreateModal = false" (created)="onRequisitionCreated($event)"></app-requisition-create>
+
+  <div class="detail-overlay" *ngIf="selectedRequisition">
+    <div class="detail-modal">
+      <header class="detail-header">
+        <div>
+          <p class="detail-tag">Requisition summary</p>
+          <h3>{{ selectedRequisition.title }}</h3>
+          <p class="detail-sub">{{ selectedRequisition.purpose }}</p>
+        </div>
+        <button type="button" class="detail-close" (click)="closeDetailModal()" aria-label="Close">
+          <span class="material-icons">close</span>
+        </button>
+      </header>
+
+      <section class="detail-grid">
+        <div>
+          <label>Tehsil</label>
+          <p>{{ selectedRequisition.tehsil || '—' }}</p>
+        </div>
+        <div>
+          <label>Requested Date</label>
+          <p>{{ selectedRequisition.requiredDate ? (selectedRequisition.requiredDate | date:'mediumDate') : '—' }}</p>
+        </div>
+        <div>
+          <label>Priority</label>
+          <p>{{ selectedRequisition.priority || '—' }}</p>
+        </div>
+        <div>
+          <label>Estimated Value</label>
+          <p>{{ selectedRequisition.estimatedValue || '—' }}</p>
+        </div>
+        <div>
+          <label>Land Dimensions (ft)</label>
+          <p>
+            {{ selectedRequisition.landBreadth || '—' }} x
+            {{ selectedRequisition.landDepth || '—' }}
+          </p>
+        </div>
+        <div>
+          <label>Total Area</label>
+          <p *ngIf="selectedRequisition.calculatedAreaSqFt; else areaFallback">
+            {{ selectedRequisition.calculatedAreaSqFt | number:'1.0-0' }} sq ft ·
+            {{ selectedRequisition.calculatedAreaMarlas | number:'1.0-2' }} marlas ·
+            {{ selectedRequisition.calculatedAreaKanals | number:'1.0-2' }} kanals
+          </p>
+          <ng-template #areaFallback>
+            <p>{{ selectedRequisition.landArea || 'N/A' }}</p>
+          </ng-template>
+        </div>
+        <div class="wide">
+          <label>Location</label>
+          <p>
+            <span *ngIf="selectedRequisition.location?.address" class="location-address">{{ selectedRequisition.location.address }}</span>
+            <span *ngIf="selectedRequisition.location?.coordinateString" class="location-coordinates">{{ selectedRequisition.location.coordinateString }}</span>
+            <span *ngIf="!selectedRequisition.location?.address && !selectedRequisition.location?.coordinateString">—</span>
+          </p>
+        </div>
+      </section>
+
+      <section class="detail-map">
+        <div class="map-toolbar compact">
+          <form class="map-toolbar-form" (ngSubmit)="onCoordinateSearchSubmit('detail')" novalidate>
+            <label class="toolbar-label" for="detail-map-search">Go to Coordinates</label>
+            <div class="map-toolbar-field">
+              <input
+                id="detail-map-search"
+                name="detailMapSearch"
+                type="text"
+                [(ngModel)]="mapControls.detail.query"
+                (ngModelChange)="onCoordinateInput('detail')"
+                placeholder="Lat Lon or Lon Lat"
+                autocapitalize="off"
+                autocorrect="off"
+                spellcheck="false"
+              />
+              <button type="submit" class="btn btn-ghost">
+                <span class="material-icons">travel_explore</span>
+                Fly
+              </button>
+            </div>
+          </form>
+          <div class="map-toolbar-select">
+            <label class="toolbar-label" for="detail-map-basemap">Base Layer</label>
+            <select
+              id="detail-map-basemap"
+              name="detailMapBasemap"
+              [(ngModel)]="selectedBasemap"
+              (ngModelChange)="onBasemapChange($event)"
+            >
+              <option *ngFor="let option of mapBasemapOptions" [ngValue]="option.id">{{ option.label }}</option>
+            </select>
+          </div>
+          <button type="button" class="btn btn-neutral locate-button" (click)="onLocateUser('detail')">
+            <span class="material-icons">my_location</span>
+            Locate Me
+          </button>
+        </div>
+        <p class="map-feedback error" *ngIf="mapControls.detail.error">{{ mapControls.detail.error }}</p>
+        <p class="map-feedback" *ngIf="!mapControls.detail.error && mapControls.detail.feedback">{{ mapControls.detail.feedback }}</p>
+        <app-map-workspace
+          #detailMap
+          class="map-canvas"
+          [plans]="mapPlans"
+          [showControls]="false"
+          [basemap]="selectedBasemap"
+        ></app-map-workspace>
+      </section>
+
+      <section class="detail-docs">
+        <h4>Supporting Documents</h4>
+        <ul>
+          <li *ngFor="let doc of selectedRequisition.supportingDocs">{{ doc }}</li>
+          <li *ngFor="let att of selectedRequisition.attachments">{{ att }}</li>
+          <li *ngIf="(!selectedRequisition.supportingDocs || selectedRequisition.supportingDocs.length === 0) && (!selectedRequisition.attachments || selectedRequisition.attachments.length === 0)">
+            No documents uploaded
+          </li>
+        </ul>
+      </section>
+
+      <section class="detail-history">
+        <h4>Land Request History</h4>
+        <div class="history-timeline" *ngIf="selectedRequisition.activityLog?.length; else emptyHistory">
+          <article class="history-item" *ngFor="let entry of selectedRequisition.activityLog">
+            <div class="history-header">
+              <span class="history-action">{{ entry.action }}</span>
+              <span class="history-meta">{{ entry.timestamp | date:'medium' }}</span>
+            </div>
+            <p class="history-user">{{ entry.user?.name || entry.user || 'System' }}</p>
+            <p class="history-remarks" *ngIf="entry.remarks">{{ entry.remarks }}</p>
+          </article>
+        </div>
+        <ng-template #emptyHistory>
+          <p class="history-empty">No history yet</p>
+        </ng-template>
+      </section>
+    </div>
+  </div>
+</div>

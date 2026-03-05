@@ -1,0 +1,197 @@
+.asset-layer-toggle-container {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  .toggle-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-bottom: 1px solid #e2e8f0;
+
+    .toggle-title {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #0f172a;
+    }
+
+    .collapse-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #64748b;
+      font-size: 1rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: rgba(0, 0, 0, 0.05);
+        color: #0f172a;
+      }
+
+      .icon {
+        display: inline-block;
+        transition: transform 0.2s ease;
+      }
+    }
+  }
+
+  .layers-list {
+    max-height: 500px;
+    overflow-y: auto;
+    transition: max-height 0.3s ease, opacity 0.3s ease;
+    opacity: 1;
+
+    &.collapsed {
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+    }
+
+    .layer-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid #f1f5f9;
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background-color: rgba(0, 0, 0, 0.03);
+      }
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      .layer-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex: 1;
+        cursor: pointer;
+        user-select: none;
+
+        .layer-checkbox {
+          cursor: pointer;
+          width: 1.125rem;
+          height: 1.125rem;
+          accent-color: #2563eb;
+          border-radius: 0.25rem;
+        }
+
+        .layer-name {
+          font-size: 0.875rem;
+          color: #1e293b;
+          font-weight: 500;
+        }
+      }
+
+      .layer-details {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        .badge {
+          font-size: 0.75rem;
+          background: #e0e7ff;
+          color: #3730a3;
+          padding: 0.25rem 0.5rem;
+          border-radius: 0.25rem;
+          font-weight: 600;
+          min-width: 2rem;
+          text-align: center;
+        }
+
+        .color-swatch {
+          display: inline-block;
+          width: 1rem;
+          height: 1rem;
+          border-radius: 0.25rem;
+          border: 2px solid #cbd5e1;
+          cursor: pointer;
+          transition: all 0.2s ease;
+
+          &:hover {
+            border-color: #94a3b8;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+          }
+        }
+      }
+    }
+  }
+
+  .toggle-footer {
+    padding: 0.75rem 1rem;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+
+    .info-text {
+      margin: 0;
+      font-size: 0.75rem;
+      color: #64748b;
+      line-height: 1.4;
+
+      strong {
+        color: #475569;
+      }
+    }
+  }
+}
+
+/* Scrollbar styling for webkit browsers */
+.layers-list {
+  &::-webkit-scrollbar {
+    width: 0.5rem;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f5f9;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 0.25rem;
+
+    &:hover {
+      background: #94a3b8;
+    }
+  }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .asset-layer-toggle-container {
+    .toggle-header {
+      padding: 0.75rem;
+
+      .toggle-title {
+        font-size: 0.875rem;
+      }
+    }
+
+    .layers-list {
+      .layer-item {
+        padding: 0.5rem 0.75rem;
+        flex-direction: column;
+        align-items: flex-start;
+
+        .layer-details {
+          margin-top: 0.5rem;
+          width: 100%;
+        }
+      }
+    }
+
+    .toggle-footer {
+      padding: 0.5rem 0.75rem;
+    }
+  }
+}

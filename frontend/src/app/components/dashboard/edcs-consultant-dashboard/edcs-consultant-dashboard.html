@@ -1,0 +1,658 @@
+<section class="consultant-dashboard" [class.is-loading]="loading()">
+  <header class="dashboard-header">
+    <div class="header-copy">
+      <h1>PRMSC Red Book Workspace</h1>
+      <p>Review consultant submissions, capture maintenance activity, and ensure the PRMSC Red Book asset records stay current.</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn primary" (click)="openMaintenanceModule()">
+        Maintenance ({{ pendingMaintenancePlans().length }})
+      </button>
+      <button type="button" class="btn secondary" (click)="startNewPlan()">New Plan</button>
+      <button type="button" class="btn ghost" (click)="clearDraft()" [disabled]="!hasDraft()">Clear Draft</button>
+      <button
+        type="button"
+        class="btn outline"
+        (click)="exportAssetReport()"
+        [disabled]="loading() || !planList().length"
+        title="Download all captured asset data as an Excel workbook"
+      >
+        Download Excel
+      </button>
+      <button
+        type="button"
+        class="btn outline"
+        (click)="exportSelectedAssetReport()"
+        [disabled]="loading() || !selectedPlan()"
+        title="Download the selected asset with its operational and recurring history"
+      >
+        Download Selected
+      </button>
+    </div>
+  </header>
+
+  <section class="asset-kpi-strip">
+    <article class="kpi-card accent-{{ kpi.accent }}" *ngFor="let kpi of assetKpis()">
+      <span class="kpi-label">{{ kpi.label }}</span>
+      <span class="kpi-value">{{ kpi.value }}</span>
+    </article>
+  </section>
+
+  <section class="dashboard-grid">
+    <div class="map-panel map-panel--landscape">
+      <div class="map-header">
+        <div>
+          <h2>PRMSC Asset Map</h2>
+          <p>{{ draftSummary() }}</p>
+          <p class="map-coordinates" *ngIf="currentCoordinateLabel()">Lat/Lng: {{ currentCoordinateLabel() }}</p>
+        </div>
+        <div class="legend">
+          <span class="legend-chip water">Water Supply</span>
+          <span class="legend-chip sewerage">Sewerage</span>
+          <span class="legend-chip support">Support</span>
+          <span class="legend-chip custom">Custom</span>
+        </div>
+        <div class="draw-actions">
+          <button type="button" class="btn outline" (click)="startPipelineDrawing()" [disabled]="saving() || loading()">Draw Pipeline</button>
+          <button type="button" class="btn outline" (click)="startAreaDrawing()" [disabled]="saving() || loading()">Outline Area</button>
+          <button type="button" class="btn outline" (click)="startPinDrawing()" [disabled]="saving() || loading()">Drop Pin</button>
+          <button
+            type="button"
+            class="btn outline pdf-export"
+            (click)="exportSelectedAssetPdf()"
+            [disabled]="!selectedPlan()"
+            title="Export current asset as PDF report"
+          >
+            📄 Export PDF
+          </button>
+        </div>
+      </div>
+      <app-map-workspace
+        class="map-container"
+        [plans]="mapPlans()"
+        [highlightedPlanId]="highlightedPlanId()"
+        [draftFeature]="draftFeature()"
+        (draftFeatureChange)="onDraftFeatureChange($event)"
+        (draftSummaryChange)="onDraftSummaryChange($event)"
+        (planFocused)="onMapPlanFocused($event)"
+        (assetSelected)="onAssetSelected($event)"
+        (mapReady)="onMapReady($event)"
+      ></app-map-workspace>
+      <app-asset-layer-toggle
+        [collapsed]="assetLayerCollapsed()"
+        (layerToggled)="onLayerToggled($event)"
+        (collapsed$)="onAssetLayerCollapseChange($event)"
+      ></app-asset-layer-toggle>
+    </div>
+
+    <div class="content-layout">
+      <form [formGroup]="planForm" (ngSubmit)="onSubmit()" class="plan-form">
+        <header class="plan-form__header">
+          <div class="plan-form__intro">
+            <h2>{{ selectedPlan() ? 'Update Asset' : 'Capture New Asset' }}</h2>
+            <p>{{ selectedPlan() ? 'Edit the metadata for the highlighted feature and publish the revision.' : 'Select an asset type, link it to a site, draw it on the map, and save.' }}</p>
+          </div>
+          <button
+            type="button"
+            class="btn outline plan-form__dashboard-btn"
+            *ngIf="selectedPlan()"
+            (click)="openAssetInsights($any(selectedPlan()))"
+          >
+            View Asset Dashboard
+          </button>
+        </header>
+
+        <div class="form-row">
+          <label>Asset Type *</label>
+          <select formControlName="assetType">
+            <option value="">Select infrastructure</option>
+            <optgroup *ngFor="let group of assetGroups()" [label]="group.category">
+              <option *ngFor="let asset of group.assets" [value]="asset.value">{{ asset.label }}</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <label>Category</label>
+          <input type="text" formControlName="category" readonly />
+        </div>
+
+        <div class="form-row">
+          <label>Asset Name *</label>
+          <input type="text" formControlName="title" (input)="onTitleInput()" placeholder="e.g. Water pipeline along Main Street" />
+        </div>
+
+        <div class="form-row">
+          <label>Linked Site</label>
+          <select formControlName="requisitionId">
+            <option value="">Unlinked</option>
+            <option *ngFor="let site of availableSites()" [value]="site.id">{{ site.title }} ({{ site.tehsil || 'Tehsil TBC' }})</option>
+          </select>
+        </div>
+
+        <div class="form-row two-column">
+          <label>Tehsil</label>
+          <input type="text" formControlName="tehsil" placeholder="Auto populated after linking" />
+          <label>District</label>
+          <input type="text" formControlName="district" placeholder="District name" />
+        </div>
+
+        <section class="asset-metadata-section">
+          <header>
+            <h3>Asset Lifecycle Information</h3>
+            <p>Track commissioning, maintenance schedule, and lifespan to monitor long-term reliability.</p>
+          </header>
+          <div class="form-row two-column">
+            <label>Commissioning Date</label>
+            <input type="date" formControlName="commissioningDate" />
+            <label>Next Maintenance Date</label>
+            <input type="date" formControlName="nextMaintenanceDate" />
+          </div>
+          <div class="form-row">
+            <label>Expected Lifespan (years)</label>
+            <input type="number" formControlName="expectedLifespanYears" min="0" placeholder="e.g. 25" />
+          </div>
+        </section>
+
+        <!-- Operational snapshot form removed in favor of recurring capture -->
+
+        <ng-container formGroupName="assetSpecs">
+          <section class="asset-spec-section" *ngIf="activeAssetFields().length">
+            <header>
+              <h3>{{ activeAssetFormMeta()?.title }}</h3>
+              <p>{{ activeAssetFormMeta()?.summary }}</p>
+            </header>
+            <div class="asset-spec-grid">
+              <ng-container *ngFor="let field of activeAssetFields()">
+                <div class="asset-spec-grid__section" *ngIf="field.role === 'section'">
+                  <h4>{{ field.label }}</h4>
+                  <p *ngIf="field.description">{{ field.description }}</p>
+                </div>
+                <div class="form-row" *ngIf="field.role !== 'section'">
+                  <label>
+                    {{ field.label }}
+                    <span class="required-indicator" *ngIf="field.required" aria-hidden="true">*</span>
+                    <span class="frequency-chip" *ngIf="field.frequencyLabel">{{ field.frequencyLabel }}</span>
+                  </label>
+                  <ng-container [ngSwitch]="field.type">
+                    <select *ngSwitchCase="'select'" [formControlName]="field.control">
+                      <option *ngFor="let option of field.options || []" [value]="option.value">{{ option.label }}</option>
+                    </select>
+                    <input
+                      *ngSwitchCase="'number'"
+                      type="number"
+                      [formControlName]="field.control"
+                      [placeholder]="field.placeholder || ''"
+                    />
+                    <input
+                      *ngSwitchCase="'date'"
+                      type="date"
+                      [formControlName]="field.control"
+                      [placeholder]="field.placeholder || ''"
+                    />
+                    <input
+                      *ngSwitchDefault
+                      type="text"
+                      [formControlName]="field.control"
+                      [placeholder]="field.placeholder || ''"
+                    />
+                  </ng-container>
+                  <small class="input-meta" *ngIf="field.unit">{{ field.unit }}</small>
+                  <small class="input-hint" *ngIf="field.description">{{ field.description }}</small>
+                  <small class="input-hint" *ngIf="field.note">{{ field.note }}</small>
+                </div>
+              </ng-container>
+            </div>
+          </section>
+
+          <section class="asset-recurring-section" *ngIf="activeRecurringFields().length">
+            <header>
+              <h3>{{ activeRecurringMeta()?.title || 'Recurring Measurements' }}</h3>
+              <p>{{ activeRecurringMeta()?.summary || 'Track periodic values captured during each update.' }}</p>
+            </header>
+            <div class="asset-spec-grid asset-spec-grid--recurring">
+              <ng-container *ngFor="let field of activeRecurringFields()">
+                <div class="form-row">
+                  <label>
+                    {{ field.label }}
+                    <span class="required-indicator" *ngIf="field.required" aria-hidden="true">*</span>
+                    <span class="frequency-chip" *ngIf="field.frequencyLabel">{{ field.frequencyLabel }}</span>
+                  </label>
+                  <ng-container [ngSwitch]="field.type">
+                    <select *ngSwitchCase="'select'" [formControlName]="field.control">
+                      <option *ngFor="let option of field.options || []" [value]="option.value">{{ option.label }}</option>
+                    </select>
+                    <input
+                      *ngSwitchCase="'number'"
+                      type="number"
+                      [formControlName]="field.control"
+                      [placeholder]="field.placeholder || ''"
+                    />
+                    <input
+                      *ngSwitchCase="'date'"
+                      type="date"
+                      [formControlName]="field.control"
+                      [placeholder]="field.placeholder || ''"
+                    />
+                    <input
+                      *ngSwitchDefault
+                      type="text"
+                      [formControlName]="field.control"
+                      [placeholder]="field.placeholder || ''"
+                    />
+                  </ng-container>
+                  <small class="input-meta" *ngIf="field.unit">{{ field.unit }}</small>
+                  <small class="input-hint" *ngIf="field.description">{{ field.description }}</small>
+                  <small class="input-hint" *ngIf="field.note">{{ field.note }}</small>
+                </div>
+              </ng-container>
+            </div>
+
+            <div class="recurring-history" *ngIf="recurringHistoryEntries().length">
+              <h4>Saved entries</h4>
+              <p>Latest saves appear first. Each row reflects data at the time of submission.</p>
+              <div class="recurring-table-wrapper">
+                <table class="recurring-table">
+                  <thead>
+                    <tr>
+                      <th>Captured</th>
+                      <th *ngFor="let column of recurringHistoryColumns()">{{ column.label }}</th>
+                      <th>Attachment</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let entry of recurringHistoryEntries()">
+                      <td>{{ entry.capturedAt | date:'medium' }}</td>
+                      <td *ngFor="let column of recurringHistoryColumns()">
+                        {{ formatRecurringValue(entry.values[column.key]) }}
+                      </td>
+                      <td>
+                        <ng-container *ngIf="entry.attachment as attachment; else recurringNoAttachment">
+                          <a [href]="attachment.url" target="_blank" rel="noopener" class="attachment-link">
+                            {{ attachment.originalName || attachment.storedName || 'Attachment' }}
+                          </a>
+                        </ng-container>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        </ng-container>
+
+        <ng-template #recurringNoAttachment>
+          <span class="no-attachment">—</span>
+        </ng-template>
+
+        <div class="form-row">
+          <label>Project Notes</label>
+          <textarea rows="3" formControlName="notes" placeholder="Field observations, installation notes"></textarea>
+        </div>
+
+        <div class="form-row">
+          <label>Design Narrative</label>
+          <textarea rows="3" formControlName="description" placeholder="Optional description visible to reviewers"></textarea>
+        </div>
+
+        <div class="form-row">
+          <label>Additional Attributes (JSON)</label>
+          <textarea rows="3" formControlName="attributesJson" placeholder='{"diameter":"110 mm"}'></textarea>
+        </div>
+
+        <p class="form-hint">Draw the feature before saving. A new drawing replaces the previous geometry.</p>
+        <p class="form-error" *ngIf="formError()">{{ formError() }}</p>
+
+        <div class="form-actions">
+          <button type="submit" class="btn primary" [disabled]="saving()">Save Asset</button>
+          <button type="button" class="btn danger" *ngIf="selectedPlan()" (click)="deletePlan(selectedPlan()!, $event)" [disabled]="saving()">Delete</button>
+        </div>
+      </form>
+
+      <section class="plans-panel">
+        <header>
+          <div>
+            <h2>Planned Assets</h2>
+            <p>{{ filteredPlans().length }} of {{ planList().length }} showing</p>
+          </div>
+          <button type="button" class="link-btn" (click)="clearFilters()" *ngIf="filterCategory() || filterAssetType() || filterRequisition() || searchTerm()">Reset filters</button>
+        </header>
+
+        <div class="plan-filters">
+          <label>
+            <span>Category</span>
+            <select #categoryFilter [value]="filterCategory()" (change)="onFilterCategoryChange(categoryFilter.value)">
+              <option value="">All</option>
+              <option value="Water Supply">Water Supply</option>
+              <option value="Sewerage">Sewerage</option>
+              <option value="Support Facility">Support Facility</option>
+              <option value="Custom">Custom</option>
+            </select>
+          </label>
+          <label>
+            <span>Asset</span>
+            <select #assetFilter [value]="filterAssetType()" (change)="onFilterAssetTypeChange(assetFilter.value)">
+              <option value="">All assets</option>
+              <option *ngFor="let asset of filterAssetOptions()" [value]="asset.value">{{ asset.label }}</option>
+            </select>
+          </label>
+          <label>
+            <span>Site</span>
+            <select #requisitionFilter [value]="filterRequisition()" (change)="onFilterRequisitionChange(requisitionFilter.value)">
+              <option value="">All sites</option>
+              <option *ngFor="let site of availableSites()" [value]="site.id">{{ site.title }}</option>
+            </select>
+          </label>
+          <label class="search-field">
+            <span>Search</span>
+            <input #searchInput type="search" [value]="searchTerm()" (input)="onSearchChange(searchInput.value)" placeholder="Search by name, tehsil, or notes" />
+          </label>
+        </div>
+
+        <div class="plans-list" *ngIf="filteredPlans().length; else emptyPlans">
+          <button type="button" class="plan-card" *ngFor="let plan of filteredPlans(); trackBy: trackByPlan" (click)="onSelectPlan(plan)">
+            <div class="plan-card-header">
+              <span class="plan-badge" [class.water]="plan.category === 'Water Supply'" [class.sewerage]="plan.category === 'Sewerage'" [class.support]="plan.category === 'Support Facility'" [class.custom]="plan.category === 'Custom'">{{ plan.category }}</span>
+              <time>{{ plan.updatedAt ? (plan.updatedAt | date:'medium') : '—' }}</time>
+            </div>
+            <h3>{{ plan.title }}</h3>
+            <p class="plan-meta">{{ plan.assetLabel }} · {{ plan.tehsil || 'Tehsil TBC' }}</p>
+            <ul class="plan-attributes" *ngIf="attributeEntries(plan).length">
+              <li *ngFor="let attr of attributeEntries(plan)">{{ attr.label }}: {{ attr.value }}</li>
+            </ul>
+          </button>
+        </div>
+
+        <ng-template #emptyPlans>
+          <div class="empty-state">
+            <p>No plans match the current filters.</p>
+          </div>
+        </ng-template>
+      </section>
+    </div>
+  </section>
+</section>
+
+  <div class="asset-insights-overlay" *ngIf="assetInsightOpen() && assetInsightData() as insight">
+    <div class="asset-insights-overlay__backdrop" (click)="closeAssetInsights()"></div>
+    <section class="asset-insights-overlay__panel" (click)="$event.stopPropagation()">
+      <header class="asset-insights-overlay__header">
+        <div>
+          <span class="asset-insights-overlay__badge">{{ insight.plan.category }}</span>
+          <h2>{{ insight.plan.title }}</h2>
+          <p>{{ insight.plan.assetLabel }} · {{ insight.plan.tehsil || 'Tehsil TBC' }} · {{ insight.plan.district || 'District TBC' }}</p>
+        </div>
+        <div class="asset-insights-overlay__header-actions">
+          <div class="asset-insights-overlay__location">
+            <span class="asset-insights-overlay__location-label">Location</span>
+            <span>{{ insight.locationLabel }}</span>
+          </div>
+          <button type="button" class="btn ghost" (click)="closeAssetInsights()">Close</button>
+        </div>
+      </header>
+
+      <section class="asset-insights-overlay__summary">
+        <article class="asset-health-card">
+          <div class="asset-health-card__score">
+            <span>Asset Health</span>
+            <strong>{{ insight.healthScore }}%</strong>
+          </div>
+          <p>{{ insight.healthDescriptor }}</p>
+          <div class="asset-health-card__meta">
+            <span *ngIf="insight.powerProfile">Power: {{ insight.powerProfile }}</span>
+            <span>Last update: {{ insight.plan.updatedAt ? (insight.plan.updatedAt | date:'mediumDate') : 'Not synced' }}</span>
+          </div>
+        </article>
+      </section>
+
+      <section class="asset-insights-overlay__metrics" *ngIf="insight.metrics.length">
+        <article class="insight-metric-card" *ngFor="let metric of insight.metrics">
+          <header>
+            <span class="insight-metric-card__label">{{ metric.label }}</span>
+            <div class="insight-metric-card__value">
+              <strong>{{ metric.value }}</strong>
+              <small *ngIf="metric.unit">{{ metric.unit }}</small>
+            </div>
+            <span
+              class="insight-metric-card__delta"
+              [class.delta-up]="metric.deltaDirection === 'up'"
+              [class.delta-down]="metric.deltaDirection === 'down'"
+            >
+              <span class="delta-icon" *ngIf="metric.delta !== 'No data'">
+                {{ metric.deltaDirection === 'up' ? '^' : metric.deltaDirection === 'down' ? 'v' : '>' }}
+              </span>
+              {{ metric.delta }}
+            </span>
+          </header>
+          <div class="insight-metric-card__chart" *ngIf="metric.points">
+            <svg viewBox="0 0 100 36" preserveAspectRatio="none">
+              <polyline [attr.points]="metric.points"></polyline>
+            </svg>
+            <div class="insight-metric-card__axis">
+              <span>{{ insight.trendLabels[0] }}</span>
+              <span>{{ insight.trendLabels[insight.trendLabels.length - 1] }}</span>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="asset-insights-overlay__grid">
+        <article class="asset-insights-overlay__map">
+          <header>
+            <h3>Installed Location</h3>
+            <p>{{ insight.locationLabel }}</p>
+          </header>
+          <div class="asset-insights-overlay__map-frame" *ngIf="assetInsightMapPlans() as mapPlans">
+            <app-map-workspace
+              *ngIf="mapPlans.length"
+              class="insight-map"
+              [plans]="mapPlans"
+              [highlightedPlanId]="insight.plan.id"
+              [draftFeature]="null"
+              [showProjectPlans]="false"
+            ></app-map-workspace>
+            <div class="insight-map insight-map--empty" *ngIf="!mapPlans.length">
+              <p>Geometry not captured yet.</p>
+            </div>
+          </div>
+        </article>
+
+        <article class="asset-insights-overlay__timeline">
+          <header>
+            <h3>Maintenance Timeline</h3>
+            <p>{{ insight.maintenanceTimeline.length ? 'Recent upkeep actions logged for this asset.' : 'No maintenance records captured yet.' }}</p>
+          </header>
+          <ul>
+            <li *ngFor="let event of insight.maintenanceTimeline">
+              <div class="timeline-date">{{ event.dateLabel }}</div>
+              <div class="timeline-body" [class.is-success]="event.tone === 'success'" [class.is-warning]="event.tone === 'warning'" [class.is-critical]="event.tone === 'critical'">
+                <strong>{{ event.label }}</strong>
+                <p>{{ event.description }}</p>
+              </div>
+            </li>
+            <li class="timeline-empty" *ngIf="!insight.maintenanceTimeline.length">
+              <p>Record maintenance activities to build an operational history.</p>
+            </li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="asset-insights-overlay__facts" *ngIf="insight.keyFacts.length">
+        <h3>Key Facts</h3>
+        <dl>
+          <div class="fact-row" *ngFor="let fact of insight.keyFacts">
+            <dt>{{ fact.label }}</dt>
+            <dd>{{ fact.value }}</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="asset-insights-overlay__notes" *ngIf="insight.operationalNotes.length">
+        <h3>Operational Notes</h3>
+        <ul>
+          <li *ngFor="let note of insight.operationalNotes">{{ note }}</li>
+        </ul>
+      </section>
+    </section>
+  </div>
+
+<div class="maintenance-module" *ngIf="maintenanceModuleOpen()">
+  <div class="maintenance-backdrop" (click)="closeMaintenanceModule()"></div>
+  <section class="maintenance-window" (click)="$event.stopPropagation()">
+    <header class="maintenance-header">
+      <div>
+        <h2>Maintenance Updates</h2>
+        <p>Tehsil Manager actions are logged here and sync with the asset record.</p>
+      </div>
+      <div class="maintenance-header-actions">
+        <button type="button" class="btn ghost" (click)="closeMaintenanceModule()">Close</button>
+      </div>
+    </header>
+    <div class="maintenance-layout">
+      <aside class="maintenance-sidebar">
+        <header>
+          <h3>Pending Maintenance</h3>
+          <p>{{ pendingMaintenancePlans().length ? 'Assets that are overdue or due now.' : 'No assets are currently overdue.' }}</p>
+        </header>
+        <div class="maintenance-list">
+          <button
+            type="button"
+            class="maintenance-plan-button"
+            *ngFor="let plan of pendingMaintenancePlans(); trackBy: trackByPlan"
+            [class.is-active]="maintenanceSelectedPlan()?.id === plan.id"
+            (click)="selectMaintenancePlan(plan)"
+          >
+            <div class="maintenance-plan-header">
+              <span class="maintenance-plan-category">{{ plan.category }}</span>
+              <span
+                class="maintenance-plan-due"
+                [class.due-critical]="maintenanceDueAccent(plan) === 'critical'"
+                [class.due-warning]="maintenanceDueAccent(plan) === 'warning'"
+              >
+                {{ maintenanceDueLabel(plan) }}
+              </span>
+            </div>
+            <h4>{{ plan.title }}</h4>
+            <p class="maintenance-plan-meta">
+              {{ plan.assetLabel }} · {{ plan.tehsil || 'Tehsil TBC' }}
+            </p>
+            <p class="maintenance-plan-next">
+              Next maintenance: {{ formatMaintenanceDate(plan.nextMaintenanceDate || plan.attributes['nextMaintenanceDate']) }}
+            </p>
+          </button>
+        </div>
+        <div class="maintenance-empty" *ngIf="!pendingMaintenancePlans().length">
+          <p>Great news — everything is up to date. You can still record maintenance for the selected asset on the right.</p>
+        </div>
+      </aside>
+      <section class="maintenance-details">
+        <ng-container *ngIf="maintenanceSelectedPlan() as activePlan; else maintenanceNoSelection">
+          <article class="maintenance-context">
+            <div>
+              <h3>{{ activePlan.title }}</h3>
+              <p>{{ activePlan.category }} · {{ activePlan.tehsil || 'Tehsil TBC' }} · {{ activePlan.district || 'District TBC' }}</p>
+            </div>
+            <ul class="maintenance-context-stats">
+              <li>
+                <span>Next maintenance</span>
+                <strong>{{ formatMaintenanceDate(activePlan.nextMaintenanceDate || activePlan.attributes['nextMaintenanceDate']) }}</strong>
+              </li>
+              <li>
+                <span>Commissioned</span>
+                <strong>{{ formatMaintenanceDate(activePlan.commissioningDate || activePlan.attributes['commissioningDate']) }}</strong>
+              </li>
+            </ul>
+          </article>
+
+          <form class="maintenance-form" [formGroup]="maintenanceForm" (ngSubmit)="submitMaintenanceUpdate()">
+            <div class="maintenance-form-grid">
+              <div class="form-row">
+                <label>Maintenance Type *</label>
+                <select formControlName="maintenanceType">
+                  <option value="preventive">Preventive</option>
+                  <option value="corrective">Corrective</option>
+                  <option value="emergency">Emergency</option>
+                  <option value="inspection">Inspection</option>
+                </select>
+              </div>
+              <div class="form-row">
+                <label>Maintenance Date *</label>
+                <input type="date" formControlName="maintenanceDate" />
+              </div>
+              <div class="form-row">
+                <label>Status *</label>
+                <select formControlName="status">
+                  <option value="completed">Completed</option>
+                  <option value="pending">Pending</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+              <div class="form-row">
+                <label>Cost (PKR)</label>
+                <input type="number" min="0" step="0.01" formControlName="cost" placeholder="0" />
+              </div>
+              <div class="form-row">
+                <label>Next Maintenance Date</label>
+                <input type="date" formControlName="nextMaintenanceDate" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <label>Remarks *</label>
+              <textarea rows="3" formControlName="remarks" placeholder="Work carried out, observations, crew notes"></textarea>
+            </div>
+
+            <div class="form-row maintenance-upload">
+              <label>Attach Photos</label>
+              <input type="file" multiple accept="image/*" (change)="onMaintenanceFilesSelected($event)" />
+              <div class="maintenance-uploaded-files" *ngIf="maintenanceFiles().length">
+                <div class="maintenance-file" *ngFor="let file of maintenanceFiles(); let i = index">
+                  <span>{{ file.name }} ({{ file.size / 1024 | number:'1.0-0' }} KB)</span>
+                  <button type="button" class="link-btn" (click)="removeMaintenanceFile(i)">Remove</button>
+                </div>
+              </div>
+            </div>
+
+            <p class="form-error" *ngIf="maintenanceError()">{{ maintenanceError() }}</p>
+
+            <div class="maintenance-form-actions">
+              <button type="submit" class="btn primary" [disabled]="maintenanceSaving()">Record Maintenance</button>
+              <button type="button" class="btn outline" (click)="closeMaintenanceModule()" [disabled]="maintenanceSaving()">Cancel</button>
+            </div>
+          </form>
+
+          <section class="maintenance-history" *ngIf="maintenanceHistory() as history">
+            <header>
+              <h4>Maintenance History</h4>
+              <p>{{ history.length ? 'Latest actions logged against this asset.' : 'No maintenance records captured yet.' }}</p>
+            </header>
+            <div class="maintenance-history-list" *ngIf="history.length">
+              <article class="maintenance-history-card" *ngFor="let record of history">
+                <div class="maintenance-history-header">
+                  <strong>{{ formatMaintenanceDate(record.date) }}</strong>
+                  <span class="maintenance-history-type">{{ record.type | titlecase }}</span>
+                  <span class="maintenance-history-status">{{ record.status | titlecase }}</span>
+                </div>
+                <p>{{ record.notes || record.description || 'No remarks captured.' }}</p>
+                <ul class="maintenance-history-meta">
+                  <li *ngIf="record.cost">Cost: {{ record.cost | number:'1.0-0' }} PKR</li>
+                  <li *ngIf="record.performedBy">Performed by: {{ record.performedBy }}</li>
+                </ul>
+                <ul class="maintenance-history-attachments" *ngIf="record.attachments?.length">
+                  <li *ngFor="let attachment of record.attachments">
+                    <a [href]="attachment.url" target="_blank" rel="noopener">{{ attachment.originalName || attachment.storedName || 'Attachment' }}</a>
+                  </li>
+                </ul>
+              </article>
+            </div>
+          </section>
+        </ng-container>
+        <ng-template #maintenanceNoSelection>
+          <div class="maintenance-empty">
+            <p>Select an asset to capture a maintenance action.</p>
+          </div>
+        </ng-template>
+      </section>
+    </div>
+  </section>
+</div>

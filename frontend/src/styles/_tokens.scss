@@ -1,0 +1,290 @@
+/**
+ * Design Tokens - LDS Modern UI
+ * Using oklch color space for perceptual uniformity
+ * Supports light and dark modes
+ */
+
+:root {
+  /* ============================================
+   * COLOR SCALES
+   * ============================================ */
+  
+  /* Primary (Azure Blue) */
+  --color-primary-50: oklch(97% 0.01 250);
+  --color-primary-100: oklch(93% 0.03 250);
+  --color-primary-200: oklch(86% 0.06 250);
+  --color-primary-300: oklch(75% 0.12 250);
+  --color-primary-400: oklch(65% 0.18 250);
+  --color-primary-500: oklch(55% 0.22 250);
+  --color-primary-600: oklch(48% 0.20 250);
+  --color-primary-700: oklch(40% 0.18 250);
+  --color-primary-800: oklch(32% 0.14 250);
+  --color-primary-900: oklch(25% 0.10 250);
+  --color-primary-950: oklch(18% 0.08 250);
+  
+  /* Secondary (Slate Gray) */
+  --color-secondary-50: oklch(98% 0.005 260);
+  --color-secondary-100: oklch(95% 0.01 260);
+  --color-secondary-200: oklch(90% 0.015 260);
+  --color-secondary-300: oklch(82% 0.02 260);
+  --color-secondary-400: oklch(68% 0.02 260);
+  --color-secondary-500: oklch(55% 0.025 260);
+  --color-secondary-600: oklch(45% 0.025 260);
+  --color-secondary-700: oklch(38% 0.02 260);
+  --color-secondary-800: oklch(30% 0.02 260);
+  --color-secondary-900: oklch(22% 0.015 260);
+  --color-secondary-950: oklch(15% 0.01 260);
+  
+  /* Accent (Teal/Cyan) */
+  --color-accent-50: oklch(97% 0.02 185);
+  --color-accent-100: oklch(93% 0.04 185);
+  --color-accent-200: oklch(86% 0.08 185);
+  --color-accent-300: oklch(78% 0.12 185);
+  --color-accent-400: oklch(68% 0.15 185);
+  --color-accent-500: oklch(58% 0.14 185);
+  --color-accent-600: oklch(50% 0.12 185);
+  --color-accent-700: oklch(42% 0.10 185);
+  --color-accent-800: oklch(35% 0.08 185);
+  --color-accent-900: oklch(28% 0.06 185);
+  
+  /* ============================================
+   * SEMANTIC COLORS
+   * ============================================ */
+  
+  /* Success (Green) */
+  --color-success-light: oklch(92% 0.08 145);
+  --color-success: oklch(65% 0.18 145);
+  --color-success-dark: oklch(45% 0.14 145);
+  
+  /* Warning (Amber) */
+  --color-warning-light: oklch(93% 0.10 85);
+  --color-warning: oklch(78% 0.16 75);
+  --color-warning-dark: oklch(55% 0.14 65);
+  
+  /* Error (Red) */
+  --color-error-light: oklch(92% 0.06 25);
+  --color-error: oklch(62% 0.22 25);
+  --color-error-dark: oklch(48% 0.18 25);
+  
+  /* Info (Blue) */
+  --color-info-light: oklch(93% 0.04 250);
+  --color-info: oklch(60% 0.18 250);
+  --color-info-dark: oklch(45% 0.15 250);
+  
+  /* ============================================
+   * SURFACE COLORS (Glassmorphism)
+   * ============================================ */
+  
+  --surface-base: oklch(100% 0 0);
+  --surface-elevated: oklch(100% 0 0);
+  --surface-sunken: oklch(97% 0.005 260);
+  --surface-glass: oklch(100% 0 0 / 0.75);
+  --surface-glass-border: oklch(100% 0 0 / 0.3);
+  --surface-overlay: oklch(0% 0 0 / 0.5);
+  
+  /* Text colors */
+  --text-primary: oklch(20% 0.02 260);
+  --text-secondary: oklch(45% 0.02 260);
+  --text-tertiary: oklch(60% 0.015 260);
+  --text-disabled: oklch(70% 0.01 260);
+  --text-inverse: oklch(100% 0 0);
+  
+  /* Border colors */
+  --border-subtle: oklch(90% 0.01 260);
+  --border-default: oklch(85% 0.015 260);
+  --border-strong: oklch(75% 0.02 260);
+  --border-focus: var(--color-primary-500);
+  
+  /* ============================================
+   * SHADOWS
+   * ============================================ */
+  
+  --shadow-xs: 0 1px 2px oklch(0% 0 0 / 0.05);
+  --shadow-sm: 0 1px 3px oklch(0% 0 0 / 0.08), 
+               0 1px 2px oklch(0% 0 0 / 0.06);
+  --shadow-md: 0 4px 6px oklch(0% 0 0 / 0.08), 
+               0 2px 4px oklch(0% 0 0 / 0.06);
+  --shadow-lg: 0 10px 15px oklch(0% 0 0 / 0.10), 
+               0 4px 6px oklch(0% 0 0 / 0.05);
+  --shadow-xl: 0 20px 25px oklch(0% 0 0 / 0.12), 
+               0 8px 10px oklch(0% 0 0 / 0.06);
+  --shadow-2xl: 0 25px 50px oklch(0% 0 0 / 0.18);
+  
+  /* Colored shadows */
+  --shadow-primary: 0 4px 14px oklch(55% 0.22 250 / 0.25);
+  --shadow-glow: 0 0 40px oklch(55% 0.22 250 / 0.15);
+  --shadow-glow-success: 0 0 30px oklch(65% 0.18 145 / 0.20);
+  --shadow-glow-warning: 0 0 30px oklch(78% 0.16 75 / 0.20);
+  --shadow-glow-error: 0 0 30px oklch(62% 0.22 25 / 0.20);
+  
+  /* Inset shadows */
+  --shadow-inset: inset 0 2px 4px oklch(0% 0 0 / 0.06);
+  
+  /* ============================================
+   * BORDER RADIUS
+   * ============================================ */
+  
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-3xl: 24px;
+  --radius-full: 9999px;
+  
+  /* ============================================
+   * SPACING SCALE
+   * ============================================ */
+  
+  --space-0: 0;
+  --space-1: 0.25rem;  /* 4px */
+  --space-2: 0.5rem;   /* 8px */
+  --space-3: 0.75rem;  /* 12px */
+  --space-4: 1rem;     /* 16px */
+  --space-5: 1.25rem;  /* 20px */
+  --space-6: 1.5rem;   /* 24px */
+  --space-8: 2rem;     /* 32px */
+  --space-10: 2.5rem;  /* 40px */
+  --space-12: 3rem;    /* 48px */
+  --space-16: 4rem;    /* 64px */
+  --space-20: 5rem;    /* 80px */
+  --space-24: 6rem;    /* 96px */
+  --space-32: 8rem;    /* 128px */
+  
+  /* ============================================
+   * TYPOGRAPHY
+   * ============================================ */
+  
+  /* Font families */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  
+  /* Font sizes */
+  --text-xs: 0.75rem;    /* 12px */
+  --text-sm: 0.875rem;   /* 14px */
+  --text-base: 1rem;     /* 16px */
+  --text-lg: 1.125rem;   /* 18px */
+  --text-xl: 1.25rem;    /* 20px */
+  --text-2xl: 1.5rem;    /* 24px */
+  --text-3xl: 1.875rem;  /* 30px */
+  --text-4xl: 2.25rem;   /* 36px */
+  --text-5xl: 3rem;      /* 48px */
+  
+  /* Font weights */
+  --font-light: 300;
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  
+  /* Line heights */
+  --leading-none: 1;
+  --leading-tight: 1.25;
+  --leading-snug: 1.375;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+  --leading-loose: 2;
+  
+  /* Letter spacing */
+  --tracking-tighter: -0.05em;
+  --tracking-tight: -0.025em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.025em;
+  --tracking-wider: 0.05em;
+  
+  /* ============================================
+   * ANIMATION
+   * ============================================ */
+  
+  /* Durations */
+  --duration-instant: 50ms;
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 400ms;
+  --duration-slower: 600ms;
+  
+  /* Easing functions */
+  --ease-linear: linear;
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.27, 1.55);
+  --ease-smooth: cubic-bezier(0.25, 0.1, 0.25, 1);
+  
+  /* Glassmorphism */
+  --glass-blur: 16px;
+  --glass-saturate: 180%;
+  
+  /* ============================================
+   * Z-INDEX SCALE
+   * ============================================ */
+  
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-fixed: 300;
+  --z-modal-backdrop: 400;
+  --z-modal: 500;
+  --z-popover: 600;
+  --z-tooltip: 700;
+  --z-toast: 800;
+}
+
+/* ============================================
+ * DARK MODE
+ * ============================================ */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Inverted surfaces */
+    --surface-base: oklch(15% 0.015 260);
+    --surface-elevated: oklch(20% 0.02 260);
+    --surface-sunken: oklch(12% 0.01 260);
+    --surface-glass: oklch(18% 0.02 260 / 0.80);
+    --surface-glass-border: oklch(30% 0.02 260 / 0.3);
+    --surface-overlay: oklch(0% 0 0 / 0.7);
+    
+    /* Inverted text */
+    --text-primary: oklch(95% 0.01 260);
+    --text-secondary: oklch(75% 0.015 260);
+    --text-tertiary: oklch(60% 0.01 260);
+    --text-disabled: oklch(45% 0.01 260);
+    --text-inverse: oklch(15% 0.02 260);
+    
+    /* Inverted borders */
+    --border-subtle: oklch(25% 0.02 260);
+    --border-default: oklch(30% 0.02 260);
+    --border-strong: oklch(40% 0.025 260);
+    
+    /* Adjusted shadows for dark mode */
+    --shadow-xs: 0 1px 2px oklch(0% 0 0 / 0.15);
+    --shadow-sm: 0 1px 3px oklch(0% 0 0 / 0.20), 
+                 0 1px 2px oklch(0% 0 0 / 0.15);
+    --shadow-md: 0 4px 6px oklch(0% 0 0 / 0.25), 
+                 0 2px 4px oklch(0% 0 0 / 0.15);
+    --shadow-lg: 0 10px 15px oklch(0% 0 0 / 0.30), 
+                 0 4px 6px oklch(0% 0 0 / 0.15);
+    --shadow-xl: 0 20px 25px oklch(0% 0 0 / 0.35), 
+                 0 8px 10px oklch(0% 0 0 / 0.18);
+    --shadow-2xl: 0 25px 50px oklch(0% 0 0 / 0.40);
+    
+    /* Brighter glow in dark mode */
+    --shadow-glow: 0 0 50px oklch(55% 0.22 250 / 0.25);
+  }
+}
+
+/* Class-based dark mode toggle */
+.dark {
+  --surface-base: oklch(15% 0.015 260);
+  --surface-elevated: oklch(20% 0.02 260);
+  --surface-sunken: oklch(12% 0.01 260);
+  --surface-glass: oklch(18% 0.02 260 / 0.80);
+  --surface-glass-border: oklch(30% 0.02 260 / 0.3);
+  --text-primary: oklch(95% 0.01 260);
+  --text-secondary: oklch(75% 0.015 260);
+  --text-tertiary: oklch(60% 0.01 260);
+  --border-subtle: oklch(25% 0.02 260);
+  --border-default: oklch(30% 0.02 260);
+  --border-strong: oklch(40% 0.025 260);
+}

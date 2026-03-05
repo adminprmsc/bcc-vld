@@ -1,0 +1,519 @@
+<div class="water-dashboard" [class.is-loading]="loading()">
+  <section class="hero">
+    <div class="hero-copy">
+      <p class="greeting">Hello {{ user.name }}</p>
+      <h2>Water Quality Operations</h2>
+      <p class="tagline">Coordinate PCRWR field teams, confirm sampling progress, and close the loop on lab analysis.</p>
+    </div>
+    <div class="hero-actions">
+      <button type="button" (click)="refresh()" [disabled]="loading()">
+        <span class="material-icons">refresh</span>
+        Refresh
+      </button>
+      <label class="mine-toggle">
+        <input type="checkbox" [checked]="mineOnly()" (change)="toggleMineOnly()" />
+        Show only my queue
+      </label>
+    </div>
+  </section>
+
+  <section class="metrics-grid">
+    <article class="metric-card accent-{{ metric.accent }}" *ngFor="let metric of metrics()">
+      <h3>{{ metric.label }}</h3>
+      <p>{{ metric.value }}</p>
+    </article>
+  </section>
+
+  <section class="trend-panel">
+    <header>
+      <h3>7-day Sampling Throughput</h3>
+      <p>Track how many assets moved through each stage over the past week.</p>
+    </header>
+    <div class="chart-legend">
+      <span class="legend-item flagged">Critical flagged</span>
+      <span class="legend-item collected">Samples collected</span>
+      <span class="legend-item results">Lab results posted</span>
+    </div>
+    <div class="trend-chart" *ngIf="trendSeries().labels.length">
+      <svg viewBox="0 0 100 36" preserveAspectRatio="none">
+        <polyline class="series flagged" [attr.points]="flaggedSparkline()"></polyline>
+        <polyline class="series collected" [attr.points]="collectedSparkline()"></polyline>
+        <polyline class="series results" [attr.points]="resultsSparkline()"></polyline>
+      </svg>
+      <div class="chart-labels">
+        <span *ngFor="let label of trendSeries().labels">{{ label }}</span>
+      </div>
+    </div>
+    <p class="empty" *ngIf="!trendSeries().labels.length">No sampling activity recorded in the past week.</p>
+  </section>
+
+  <section class="filters">
+    <div class="filter-field">
+      <label>Status</label>
+      <select [(ngModel)]="statusFilterValue">
+        <option value="">All statuses</option>
+        <option *ngFor="let status of statusOptions()" [value]="status">{{ statusLabel(status) }}</option>
+      </select>
+    </div>
+    <div class="filter-field">
+      <label>Tehsil</label>
+      <select [(ngModel)]="tehsilFilterValue">
+        <option value="">All tehsils</option>
+        <option *ngFor="let tehsil of tehsilOptions()" [value]="tehsil">{{ tehsil }}</option>
+      </select>
+    </div>
+    <div class="filter-field">
+      <label>District</label>
+      <select [(ngModel)]="districtFilterValue">
+        <option value="">All districts</option>
+        <option *ngFor="let district of districtOptions()" [value]="district">{{ district }}</option>
+      </select>
+    </div>
+    <div class="filter-field grow">
+      <label>Search</label>
+      <input type="text" [(ngModel)]="searchTermValue" placeholder="Search by asset or sampler" />
+    </div>
+  </section>
+
+  <section class="map-panel">
+    <header>
+      <div>
+        <h3>Tehsil Manager Assets</h3>
+        <p>Locate the infrastructure currently maintained by Tehsil Managers.</p>
+      </div>
+      <div class="map-status">
+        <span *ngIf="planLoading()" class="map-loading">
+          <span class="material-icons spin">sync</span>
+          Loading assets…
+        </span>
+        <span *ngIf="!planLoading()">{{ mapPlans().length }} asset(s) on map</span>
+      </div>
+    </header>
+    <div class="map-wrapper">
+      <app-map-workspace
+        [plans]="mapPlans()"
+        [highlightedPlanId]="highlightedPlanId()"
+        (planFocused)="onMapPlanFocused($event)"
+        [showControls]="false"
+      ></app-map-workspace>
+      <div class="map-empty" *ngIf="!planLoading() && !mapPlans().length">
+        <span class="material-icons">travel_explore</span>
+        <p>No Tehsil Manager assets available to display.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="flag-panel" *ngIf="isRaUser">
+    <header>
+      <h3>Flag Asset for Sampling</h3>
+      <p>Select an asset on the map to initiate a new water quality sampling workflow.</p>
+    </header>
+    <ng-container *ngIf="selectedPlan() as plan; else flagInstructions">
+      <div class="flag-summary">
+        <div>
+          <h4>{{ plan.title }}</h4>
+          <p>{{ plan.tehsil }} • {{ plan.district }}</p>
+        </div>
+        <div class="flag-status" *ngIf="plan.criticalFlag">
+          <span class="material-icons">warning</span>
+          <div>
+            <p>Currently marked critical</p>
+            <small *ngIf="plan.criticalReason">{{ plan.criticalReason }}</small>
+          </div>
+        </div>
+        <div class="flag-status info" *ngIf="selectedPlanHasActiveSample()">
+          <span class="material-icons">science</span>
+          <div>
+            <p>A sampling workflow is already active for this asset.</p>
+            <small>Close or cancel the existing sample before flagging again.</small>
+          </div>
+        </div>
+      </div>
+      <div class="flag-form">
+        <label for="flag-reason">Flag reason (optional)</label>
+        <textarea
+          id="flag-reason"
+          rows="3"
+          [(ngModel)]="flagReasonValue"
+          placeholder="Example: community complaint, observed contamination, routine follow-up"
+        ></textarea>
+        <button type="button" (click)="flagSelectedAsset()" [disabled]="!canFlagSelectedPlan() || flagging()">
+          <span class="material-icons spin" *ngIf="flagging()">sync</span>
+          <ng-container *ngIf="!flagging()">
+            <span class="material-icons">flag</span>
+          </ng-container>
+          Flag asset for sampling
+        </button>
+      </div>
+    </ng-container>
+    <ng-template #flagInstructions>
+      <div class="flag-empty">
+        <span class="material-icons">map</span>
+        <p>Select an asset on the map to enable flagging.</p>
+      </div>
+    </ng-template>
+  </section>
+
+  <div class="content">
+    <section class="samples">
+      <header>
+        <div>
+          <h3>Sampling Queue</h3>
+          <p>{{ filteredSamples().length }} asset(s) match the filters.</p>
+        </div>
+      </header>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Asset</th>
+              <th>Status</th>
+              <th>Sampler</th>
+              <th>Latest Score</th>
+              <th>Updated</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let sample of filteredSamples() | slice:0:25" [class.selected]="selectedSample()?.id === sample.id" (click)="selectSample(sample)">
+              <td>
+                <div class="table-title">{{ sample.planSnapshot.title || 'Unknown asset' }}</div>
+                <div class="table-subtitle">{{ sample.planSnapshot.tehsil }} • {{ sample.planSnapshot.district }}</div>
+              </td>
+              <td>
+                <span class="status-pill {{ statusAccent(sample.status) }}">{{ statusLabel(sample.status) }}</span>
+              </td>
+              <td>{{ sample.assignedSamplerName || 'Unassigned' }}</td>
+              <td>
+                <span class="rating-pill {{ ratingAccent(sample.computedScore?.rating) }}">
+                  {{ ratingLabel(sample.computedScore?.rating) }}
+                  <ng-container *ngIf="sample.computedScore?.value !== null && sample.computedScore?.value !== undefined">
+                    • {{ sample.computedScore?.value }}
+                  </ng-container>
+                </span>
+              </td>
+              <td>{{ formatDate(sample.updatedAt) }}</td>
+              <td class="actions">
+                <button type="button" (click)="$event.stopPropagation(); openConsultantPlan(sample)">Open plan</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="empty" *ngIf="!filteredSamples().length">
+          <span class="material-icons">science</span>
+          <p>No samples match the selected filters.</p>
+        </div>
+      </div>
+    </section>
+
+    <aside class="detail" *ngIf="selectedSample() as sample">
+      <header>
+  <h3>{{ sample.planSnapshot.title || 'Sample details' }}</h3>
+        <span class="status-pill {{ statusAccent(sample.status) }}">{{ statusLabel(sample.status) }}</span>
+      </header>
+      <dl class="summary">
+        <div>
+          <dt>Location</dt>
+          <dd>{{ sample.planSnapshot.tehsil || '—' }} • {{ sample.planSnapshot.district || '—' }}</dd>
+        </div>
+        <div>
+          <dt>Sampler</dt>
+          <dd>{{ sample.assignedSamplerName || 'Unassigned' }}</dd>
+        </div>
+        <div>
+          <dt>Field Notes</dt>
+          <dd>{{ sample.collection?.fieldNotes || 'No field notes captured yet.' }}</dd>
+        </div>
+        <div>
+          <dt>Lab Notes</dt>
+          <dd>{{ sample.labAnalysis?.notes || 'Awaiting laboratory submission.' }}</dd>
+        </div>
+        <div>
+          <dt>Latest Quality</dt>
+          <dd>
+            <span class="rating-pill {{ ratingAccent(sample.computedScore?.rating) }}">
+              {{ ratingLabel(sample.computedScore?.rating) }}
+              <ng-container *ngIf="sample.computedScore?.value !== null && sample.computedScore?.value !== undefined">
+                • {{ sample.computedScore?.value }}
+              </ng-container>
+            </span>
+          </dd>
+        </div>
+      </dl>
+      <button type="button" class="open-plan" (click)="openConsultantPlan(sample)">
+        <span class="material-icons">map</span>
+        Open asset in Red Book workspace
+      </button>
+
+      <section class="collection-panel" *ngIf="isSampler">
+        <header>
+          <h4>Field sampling</h4>
+          <p>Assigned sampler: {{ sample.assignedSamplerName || 'Unassigned' }}</p>
+        </header>
+        <div *ngIf="!samplerCanEditSelected(); else samplerForm" class="collection-message">
+          <p *ngIf="sample.assignedSamplerId !== user.id">This sample is not assigned to you. Await assignment from RA Environment.</p>
+          <p *ngIf="sample.assignedSamplerId === user.id && sample.status === 'awaiting_assignment'">Awaiting assignment confirmation before sampling can begin.</p>
+          <p *ngIf="sample.assignedSamplerId === user.id && sample.status === 'results_ready'">Sample already submitted to the lab.</p>
+          <p *ngIf="sample.assignedSamplerId === user.id && sample.status === 'in_lab'">Sample currently awaiting lab processing.</p>
+          <p *ngIf="sample.assignedSamplerId === user.id && (sample.status === 'closed' || sample.status === 'cancelled')">Sampling workflow is complete.</p>
+        </div>
+        <ng-template #samplerForm>
+          <div class="collection-form">
+            <div class="field">
+              <label for="collection-datetime">Collection timestamp</label>
+              <input
+                id="collection-datetime"
+                name="collectionDatetime"
+                type="datetime-local"
+                [ngModel]="collectionForm().collectedAt"
+                (ngModelChange)="updateCollectionForm({ collectedAt: $event })"
+              />
+            </div>
+            <div class="field">
+              <label for="collection-notes">Field notes</label>
+              <textarea
+                id="collection-notes"
+                rows="3"
+                placeholder="Describe site observations, water conditions, sampling method..."
+                [ngModel]="collectionForm().notes"
+                (ngModelChange)="updateCollectionForm({ notes: $event })"
+              ></textarea>
+            </div>
+            <div class="field grid">
+              <div>
+                <label for="collection-lat">Latitude</label>
+                <input
+                  id="collection-lat"
+                  type="text"
+                  placeholder="31.5204"
+                  [ngModel]="collectionForm().lat"
+                  (ngModelChange)="updateCollectionForm({ lat: $event })"
+                />
+              </div>
+              <div>
+                <label for="collection-lng">Longitude</label>
+                <input
+                  id="collection-lng"
+                  type="text"
+                  placeholder="74.3587"
+                  [ngModel]="collectionForm().lng"
+                  (ngModelChange)="updateCollectionForm({ lng: $event })"
+                />
+              </div>
+            </div>
+            <div class="field">
+              <label for="collection-files">Site evidence (photos, reports)</label>
+              <input id="collection-files" type="file" multiple (change)="onCollectionFilesSelected($event)" accept="image/*,application/pdf" />
+              <ul class="file-list" *ngIf="collectionFiles().length">
+                <li *ngFor="let file of collectionFiles(); let i = index">
+                  <span>{{ file.name }}</span>
+                  <button type="button" (click)="removeCollectionFile(i)">
+                    <span class="material-icons">close</span>
+                    Remove
+                  </button>
+                </li>
+              </ul>
+            </div>
+            <div class="actions">
+              <button type="button" class="secondary" (click)="startFieldCollection()" [disabled]="collectionSubmitting() === 'start'">
+                <span class="material-icons spin" *ngIf="collectionSubmitting() === 'start'">sync</span>
+                <ng-container *ngIf="collectionSubmitting() !== 'start'">
+                  <span class="material-icons">save</span>
+                </ng-container>
+                Save field progress
+              </button>
+              <button type="button" (click)="submitFieldCollection()" [disabled]="collectionSubmitting() === 'complete'">
+                <span class="material-icons spin" *ngIf="collectionSubmitting() === 'complete'">sync</span>
+                <ng-container *ngIf="collectionSubmitting() !== 'complete'">
+                  <span class="material-icons">science</span>
+                </ng-container>
+                Submit sample to lab
+              </button>
+            </div>
+          </div>
+          <div class="existing-attachments" *ngIf="samplerCollectionAttachments().length">
+            <h5>Uploaded field evidence</h5>
+            <ul>
+              <li *ngFor="let attachment of samplerCollectionAttachments()">
+                <span class="material-icons">attach_file</span>
+                <a [href]="attachment.url" target="_blank" rel="noopener">{{ attachment.originalName }}</a>
+              </li>
+            </ul>
+          </div>
+        </ng-template>
+      </section>
+
+      <section class="lab-panel" *ngIf="isLabUser">
+        <header>
+          <h4>Laboratory analysis</h4>
+          <p *ngIf="!labCanEditSelected()">Awaiting field collection or sample not in lab queue.</p>
+          <p *ngIf="labCanEditSelected()">Provide PCRWR lab metrics and upload the certified report.</p>
+        </header>
+
+        <div class="lab-summary" *ngIf="labMetricsEntries().length">
+          <h5>Previously submitted metrics</h5>
+          <div class="lab-summary-groups">
+            <article *ngFor="let group of labMetricsEntries()" class="lab-summary-group">
+              <h6>{{ group.title }}</h6>
+              <ul>
+                <li *ngFor="let entry of group.entries">
+                  <span class="label">{{ entry.label }}</span>
+                  <span class="value">{{ entry.value }}</span>
+                </li>
+              </ul>
+            </article>
+          </div>
+        </div>
+
+        <div class="lab-message" *ngIf="!labCanEditSelected()">
+          <p>The sample must be in lab custody before results can be recorded.</p>
+        </div>
+
+        <ng-container *ngIf="labCanEditSelected()">
+          <div class="lab-dates">
+            <div class="field">
+              <label for="lab-received">Sample received</label>
+              <input id="lab-received" type="datetime-local" [ngModel]="labReceivedAt()" (ngModelChange)="updateLabTimestamp('receivedAt', $event)" />
+            </div>
+            <div class="field">
+              <label for="lab-completed">Analysis completed</label>
+              <input id="lab-completed" type="datetime-local" [ngModel]="labCompletedAt()" (ngModelChange)="updateLabTimestamp('completedAt', $event)" />
+            </div>
+          </div>
+
+          <div class="lab-field-groups">
+            <section *ngFor="let group of labFieldGroups" class="lab-field-group" [attr.data-columns]="group.columns || 1">
+              <h5>{{ group.title }}</h5>
+              <div class="fields">
+                <ng-container *ngFor="let field of group.fields">
+                  <div class="field" *ngIf="field.type !== 'safety'">
+                    <label [for]="'lab-' + field.key">{{ field.label }}</label>
+                    <ng-container [ngSwitch]="field.type">
+                      <input
+                        *ngSwitchCase="'number'"
+                        [id]="'lab-' + field.key"
+                        type="number"
+                        step="any"
+                        [placeholder]="field.placeholder || ''"
+                        [ngModel]="labFormValue(field.key)"
+                        (ngModelChange)="updateLabField(field.key, $event)"
+                      />
+                      <textarea
+                        *ngSwitchCase="'textarea'"
+                        [id]="'lab-' + field.key"
+                        rows="3"
+                        [placeholder]="field.placeholder || ''"
+                        [ngModel]="labFormValue(field.key)"
+                        (ngModelChange)="updateLabField(field.key, $event)"
+                      ></textarea>
+                      <input
+                        *ngSwitchDefault
+                        [id]="'lab-' + field.key"
+                        type="text"
+                        [placeholder]="field.placeholder || ''"
+                        [ngModel]="labFormValue(field.key)"
+                        (ngModelChange)="updateLabField(field.key, $event)"
+                      />
+                    </ng-container>
+                  </div>
+                  <div class="field safety" *ngIf="field.type === 'safety'">
+                    <label>{{ field.label }}</label>
+                    <div class="toggle">
+                      <label>
+                        <input type="radio" name="lab-safety" value="safe" [checked]="labSafety() === 'safe'" (change)="setLabSafety('safe')" />
+                        Safe
+                      </label>
+                      <label>
+                        <input type="radio" name="lab-safety" value="unsafe" [checked]="labSafety() === 'unsafe'" (change)="setLabSafety('unsafe')" />
+                        Unsafe
+                      </label>
+                      <label>
+                        <input type="radio" name="lab-safety" value="" [checked]="labSafety() === ''" (change)="setLabSafety('')" />
+                        Not recorded
+                      </label>
+                    </div>
+                  </div>
+                </ng-container>
+              </div>
+            </section>
+          </div>
+
+          <div class="lab-notes">
+            <label for="lab-notes">Lab narrative</label>
+            <textarea
+              id="lab-notes"
+              rows="4"
+              placeholder="Describe analysis methods, exceedances, and recommendations."
+              [ngModel]="labNotes()"
+              (ngModelChange)="updateLabNotes($event)"
+            ></textarea>
+          </div>
+
+          <div class="lab-files">
+            <label for="lab-files">Attach lab report / chromatograms</label>
+            <input id="lab-files" type="file" multiple (change)="onLabFilesSelected($event)" accept="application/pdf,image/*" />
+            <ul class="file-list" *ngIf="labAttachments().length">
+              <li *ngFor="let file of labAttachments(); index as i">
+                <span>{{ file.name }}</span>
+                <button type="button" (click)="removeLabFile(i)">
+                  <span class="material-icons">close</span>
+                  Remove
+                </button>
+              </li>
+            </ul>
+            <div class="existing" *ngIf="labExistingAttachments().length">
+              <h6>Existing attachments</h6>
+              <ul>
+                <li *ngFor="let attachment of labExistingAttachments()">
+                  <span class="material-icons">attach_file</span>
+                  <a [href]="attachment.url" target="_blank" rel="noopener">{{ attachment.originalName }}</a>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="lab-actions">
+            <button type="button" (click)="submitLabResults()" [disabled]="labSubmitting() === 'submit'">
+              <span class="material-icons spin" *ngIf="labSubmitting() === 'submit'">sync</span>
+              <ng-container *ngIf="labSubmitting() !== 'submit'">
+                <span class="material-icons">fact_check</span>
+              </ng-container>
+              Publish lab results
+            </button>
+          </div>
+        </ng-container>
+      </section>
+
+      <div class="timeline">
+        <h4>Activity history</h4>
+        <ol>
+          <li *ngFor="let event of selectedTimeline()">
+            <span class="material-icons">{{ timelineIcon(event.code) }}</span>
+            <div>
+              <p class="event-label">{{ event.label }}</p>
+              <p class="event-meta">{{ formatDate(event.createdAt) }} • {{ event.createdByName || 'System' }}</p>
+              <p class="event-note" *ngIf="event.note">{{ event.note }}</p>
+            </div>
+          </li>
+        </ol>
+        <p class="empty" *ngIf="!selectedTimeline().length">No activity events recorded for this sample.</p>
+      </div>
+    </aside>
+  </div>
+
+  <section class="activity-feed">
+    <header>
+      <h3>Latest field &amp; lab updates</h3>
+    </header>
+    <ul>
+      <li *ngFor="let item of recentActivity()">
+        <div class="badge {{ statusAccent(item.status) }}">{{ statusLabel(item.status) }}</div>
+        <div class="feed-text">
+          <p class="feed-plan">{{ item.planTitle }}</p>
+          <p class="feed-note">{{ item.label }} • {{ item.note || 'No note provided' }}</p>
+        </div>
+        <span class="feed-time">{{ formatDate(item.createdAt) }}</span>
+      </li>
+    </ul>
+  </section>
+</div>

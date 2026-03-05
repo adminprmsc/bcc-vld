@@ -1,0 +1,168 @@
+body, html {
+	height: 100%;
+}
+
+.auth-wrapper {
+	position: relative;
+	min-height: 100vh;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 2rem 1.5rem;
+	background: #0f172a;
+	isolation: isolate;
+}
+
+.auth-wrapper::before,
+.auth-wrapper::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+}
+
+.auth-wrapper::before {
+	background: url('../../../../assets/images/login-backdrop.jpg') center / cover no-repeat;
+	filter: blur(01px);
+	transform: scale(1.05);
+}
+
+.auth-wrapper::after {
+	background: linear-gradient(135deg, rgba(146, 148, 154, 0.82), rgba(198, 199, 201, 0.75));
+}
+
+.auth-shell {
+	max-width: 960px;
+	width: 100%;
+	display: grid;
+	grid-template-columns: 1.1fr 1fr;
+	border-radius: 28px;
+	background: rgba(255, 255, 255, 0.06);
+	backdrop-filter: blur(18px);
+	box-shadow: 0 40px 80px rgba(15, 23, 42, 0.32);
+	overflow: hidden;
+	position: relative;
+	z-index: 1;
+}
+
+.auth-hero {
+	background: rgba(15, 23, 42, 0.55);
+	color: #fff;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	justify-content: center;
+	padding: 3rem;
+	gap: 1.2rem;
+}
+
+.auth-hero img {
+	width: 72px;
+	height: 72px;
+	border-radius: 18px;
+	background: rgba(255, 255, 255, 0.12);
+	padding: 0.65rem;
+}
+
+.auth-hero h1 {
+	margin: 0;
+	font-size: 2.4rem;
+	font-weight: 800;
+}
+
+.auth-hero p {
+	margin: 0;
+	font-size: 1rem;
+	max-width: 320px;
+	opacity: 0.85;
+}
+
+.auth-card {
+	background: #ffffff;
+	padding: 3rem 3.25rem;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	gap: 1.4rem;
+}
+
+.auth-card h2 {
+	margin: 0;
+	font-size: 2rem;
+	color: #0f172a;
+	font-weight: 800;
+}
+
+.auth-card .subtitle {
+	margin: 0;
+	font-size: 1rem;
+	color: #475569;
+}
+
+.full-width {
+	width: 100%;
+}
+
+.mat-mdc-form-field {
+	width: 100%;
+}
+
+.mat-mdc-form-field .mat-mdc-text-field-wrapper {
+	border-radius: 14px;
+	background: #f8fafc;
+}
+
+.form-meta {
+	display: flex;
+	justify-content: flex-end;
+}
+
+.link {
+	color: #1d4ed8;
+	font-weight: 600;
+	text-decoration: none;
+}
+
+.primary-btn {
+	width: 100%;
+	background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+	color: #fff;
+	font-weight: 700;
+	border-radius: 16px;
+	padding: 0.85rem 1rem;
+	box-shadow: 0 12px 24px rgba(34, 197, 94, 0.26);
+}
+
+.primary-btn:hover {
+	background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+}
+
+.error {
+	color: #dc2626;
+	text-align: center;
+	font-weight: 600;
+}
+
+.signup-link {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	font-size: 0.95rem;
+	color: #475569;
+}
+
+.signup-link a {
+	color: #2563eb;
+	font-weight: 600;
+}
+
+@media (max-width: 960px) {
+	.auth-shell {
+		grid-template-columns: 1fr;
+	}
+
+	.auth-hero {
+		align-items: center;
+		text-align: center;
+	}
+}

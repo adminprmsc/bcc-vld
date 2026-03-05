@@ -1,0 +1,8 @@
+<div class="requisition-detail">
+	<div class="map-section" *ngIf="plans?.length">
+		<app-map-workspace class="map-canvas" [plans]="plans" [highlightedPlanId]="highlightedPlanId"></app-map-workspace>
+	</div>
+	<div *ngIf="!plans?.length">
+		<p>No location data available for this requisition.</p>
+	</div>
+</div>

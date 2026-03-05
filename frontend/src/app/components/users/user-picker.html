@@ -1,0 +1,16 @@
+<div class="user-picker">
+  <mat-form-field appearance="outline" class="full-width">
+    <input type="text" matInput [formControl]="control" [matAutocomplete]="auto" placeholder="Search user by name, email or role">
+    <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayFn.bind(this)" (optionSelected)="onSelect($event.option.value)">
+      <mat-option *ngIf="loading">Loading...</mat-option>
+      <mat-option *ngFor="let u of users" [value]="u">{{u.name}} — {{u.role}} <span class="muted">({{u.email}})</span></mat-option>
+    </mat-autocomplete>
+  </mat-form-field>
+  <div class="remarks-row">
+    <textarea placeholder="Enter remarks (required)" [(ngModel)]="remarks" rows="2" class="remarks-input"></textarea>
+  </div>
+  <div class="actions">
+    <button mat-button color="primary" (click)="onConfirm()" [disabled]="!selectedUser || !(remarks && remarks.trim())">Confirm</button>
+    <button mat-button (click)="onCancel()">Cancel</button>
+  </div>
+</div>

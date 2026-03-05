@@ -1,0 +1,243 @@
+<div class="admin-users">
+  <header class="admin-users__header">
+    <div>
+      <h2>User Management</h2>
+      <p>Admins can provision accounts, adjust access, and keep contact details current.</p>
+    </div>
+    <button mat-raised-button color="primary" (click)="openCreatePanel()" *ngIf="isPrivileged()">
+      <mat-icon>person_add</mat-icon>
+      Add User
+    </button>
+  </header>
+
+  <section class="admin-users__metrics" *ngIf="isPrivileged()">
+    <div class="metric-card">
+      <span class="metric-label">Pending Requests</span>
+      <span class="metric-value">{{ accessRequests.length }}</span>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">Active Users</span>
+      <span class="metric-value">{{ users.length }}</span>
+    </div>
+  </section>
+
+  <section class="admin-users__requests" *ngIf="isPrivileged()">
+    <header>
+      <div>
+        <h3>Access Requests</h3>
+        <p>Review pending submissions and convert them into user accounts.</p>
+      </div>
+    </header>
+    <div class="admin-users__requests-body">
+      <div class="info-banner" *ngIf="loadingRequests">Loading requests…</div>
+      <div class="info-banner info-banner--error" *ngIf="!loadingRequests && requestsError">{{ requestsError }}</div>
+      <div class="info-banner info-banner--empty" *ngIf="!loadingRequests && !requestsError && accessRequests.length === 0">No access requests awaiting review.</div>
+      <div class="admin-users__requests-table" *ngIf="!loadingRequests && !requestsError && accessRequests.length > 0">
+        <table>
+          <thead>
+            <tr>
+              <th>Applicant</th>
+              <th>Contact</th>
+              <th>Requested Role</th>
+              <th>Tehsil / Office</th>
+              <th>Status</th>
+              <th>Received</th>
+              <th class="actions-header">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let request of accessRequests">
+              <td>
+                <div class="cell-primary">{{ request.name }}</div>
+                <div class="cell-secondary">{{ request.email }}</div>
+              </td>
+              <td>
+                <div>{{ request.phone || '—' }}</div>
+              </td>
+              <td>{{ request.roleRequested || 'Citizen' }}</td>
+              <td>{{ request.tehsil || '—' }}</td>
+              <td>
+                <span class="status-pill" [class.status-pill--active]="request.status === 'Pending'" [class.status-pill--inactive]="request.status === 'Rejected'">{{ request.status || 'Pending' }}</span>
+              </td>
+              <td>{{ request.createdAt | date:'medium' }}</td>
+              <td class="actions-cell">
+                <button mat-stroked-button color="primary" (click)="approveRequest(request)" [disabled]="processingRequestId === request._id">
+                  <mat-icon>check_circle</mat-icon>
+                  Approve
+                </button>
+                <button mat-button color="warn" (click)="rejectRequest(request)" [disabled]="processingRequestId === request._id">
+                  <mat-icon>cancel</mat-icon>
+                  Reject
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <div class="admin-users__toolbar">
+    <mat-form-field appearance="outline">
+      <mat-icon matPrefix>search</mat-icon>
+      <input matInput placeholder="Search by name, email, or role" [formControl]="filterControl" />
+    </mat-form-field>
+    <div class="admin-users__status" *ngIf="loading">Loading users…</div>
+    <div class="admin-users__status admin-users__status--error" *ngIf="!loading && errorMessage">{{ errorMessage }}</div>
+  </div>
+
+  <div class="admin-users__table" *ngIf="users.length > 0">
+    <table mat-table [dataSource]="users" class="user-table">
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef>Name</th>
+        <td mat-cell *matCellDef="let user">
+          <div class="cell-primary">{{ user.name }}</div>
+          <div class="cell-secondary" *ngIf="user.gender">{{ user.gender }}</div>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="email">
+        <th mat-header-cell *matHeaderCellDef>Email</th>
+        <td mat-cell *matCellDef="let user">{{ user.email }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="role">
+        <th mat-header-cell *matHeaderCellDef>Role</th>
+        <td mat-cell *matCellDef="let user">{{ user.role }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="phone">
+        <th mat-header-cell *matHeaderCellDef>Phone</th>
+        <td mat-cell *matCellDef="let user">{{ user.phone || '—' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>Status</th>
+        <td mat-cell *matCellDef="let user">
+          <span class="status-pill" [class.status-pill--active]="user.activeStatus === 'active'" [class.status-pill--inactive]="user.activeStatus !== 'active'">
+            {{ user.activeStatus === 'active' ? 'Active' : 'Inactive' }}
+          </span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef class="actions-header">Actions</th>
+        <td mat-cell *matCellDef="let user" class="actions-cell">
+          <button mat-stroked-button color="primary" (click)="openUpdate(user)">
+            <mat-icon>edit</mat-icon>
+            Edit
+          </button>
+          <button mat-button [color]="user.activeStatus === 'active' ? 'warn' : 'primary'" (click)="toggleActive(user)">
+            <mat-icon>{{ user.activeStatus === 'active' ? 'pause_circle' : 'play_circle' }}</mat-icon>
+            {{ user.activeStatus === 'active' ? 'Deactivate' : 'Activate' }}
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    </table>
+  </div>
+
+  <div class="admin-users__empty" *ngIf="!loading && users.length === 0 && !errorMessage">
+    <mat-icon>people_outline</mat-icon>
+    <p>No users found for the current filter.</p>
+  </div>
+
+  <section class="admin-users__create" *ngIf="showCreatePanel && isPrivileged()">
+    <header>
+      <h3>Create User</h3>
+      <button mat-icon-button (click)="closeCreatePanel()" aria-label="Close create user form">
+        <mat-icon>close</mat-icon>
+      </button>
+    </header>
+    <form [formGroup]="createForm" (ngSubmit)="submitCreate()">
+      <div class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Full Name</mat-label>
+          <input matInput formControlName="name" />
+          <mat-error *ngIf="createForm.get('name')?.hasError('required')">Name is required.</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Email</mat-label>
+          <input matInput formControlName="email" type="email" />
+          <mat-error *ngIf="createForm.get('email')?.hasError('required')">Email is required.</mat-error>
+          <mat-error *ngIf="createForm.get('email')?.hasError('email')">Enter a valid email.</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Role</mat-label>
+          <mat-select formControlName="role">
+            <mat-option *ngFor="let role of roleOptions" [value]="role">{{ role }}</mat-option>
+          </mat-select>
+          <mat-error *ngIf="createForm.get('role')?.hasError('required')">Role is required.</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Phone</mat-label>
+          <input matInput formControlName="phone" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Gender</mat-label>
+          <input matInput formControlName="gender" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>CNIC</mat-label>
+          <input matInput formControlName="cnic" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>CNIC Expiry</mat-label>
+          <input matInput formControlName="cnicExpiry" placeholder="YYYY-MM-DD" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Date of Birth</mat-label>
+          <input matInput formControlName="dob" placeholder="YYYY-MM-DD" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-grid__full">
+          <mat-label>Address</mat-label>
+          <textarea matInput rows="2" formControlName="address"></textarea>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Initial Password (optional)</mat-label>
+          <input matInput formControlName="password" type="text" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Status</mat-label>
+          <mat-select formControlName="activeStatus">
+            <mat-option value="active">Active</mat-option>
+            <mat-option value="inactive">Inactive</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+      <div class="form-actions">
+        <button mat-stroked-button type="button" (click)="closeCreatePanel()">Cancel</button>
+        <button mat-raised-button color="primary" type="submit" [disabled]="creating">
+          <mat-icon>save</mat-icon>
+          {{ creating ? 'Creating…' : 'Create User' }}
+        </button>
+      </div>
+    </form>
+    <p class="temp-password" *ngIf="lastTempPassword">Temporary password generated: <code>{{ lastTempPassword }}</code></p>
+  </section>
+
+  <div class="user-modal-overlay" *ngIf="showUpdateModal">
+    <div class="user-modal">
+      <div class="user-modal__header">
+        <h3>Edit User</h3>
+        <button mat-icon-button aria-label="Close user editor" (click)="closeUpdate()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      <app-user-update [user]="selectedUser" (close)="closeUpdate()" (saved)="handleUserSaved($event)"></app-user-update>
+    </div>
+    <div class="user-modal__backdrop" (click)="closeUpdate()"></div>
+  </div>
+</div>

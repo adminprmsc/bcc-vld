@@ -1,0 +1,26 @@
+diff --git a/node_modules/@rnmapbox/maps/lib/module/index.js b/node_modules/@rnmapbox/maps/lib/module/index.js
+index da49dc1..2f6db6a 100644
+--- a/node_modules/@rnmapbox/maps/lib/module/index.js
++++ b/node_modules/@rnmapbox/maps/lib/module/index.js
+@@ -1,6 +1,6 @@
+ "use strict";
+ 
+-export * from './Mapbox';
+-import * as Mapbox from './Mapbox';
++export * from './Mapbox.js';
++import * as Mapbox from './Mapbox.js';
+ export default Mapbox;
+ //# sourceMappingURL=index.js.map
+\ No newline at end of file
+diff --git a/node_modules/@rnmapbox/maps/lib/module/web/index.js b/node_modules/@rnmapbox/maps/lib/module/web/index.js
+index b927f47..cdb3bc9 100644
+--- a/node_modules/@rnmapbox/maps/lib/module/web/index.js
++++ b/node_modules/@rnmapbox/maps/lib/module/web/index.js
+@@ -1,6 +1,6 @@
+ "use strict";
+ 
+-import 'mapbox-gl/dist/mapbox-gl.css';
++// Mapbox GL ships CSS for web builds; Metro/Node cannot load CSS so skip it in native Expo apps.
+ import MapboxModule from "./MapboxModule.js";
+ import Camera from "./components/Camera.js";
+ import MapView from "./components/MapView.js";

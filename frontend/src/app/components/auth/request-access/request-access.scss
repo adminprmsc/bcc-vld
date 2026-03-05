@@ -1,0 +1,133 @@
+.request-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(120deg, #0f4c81, #1a61d1);
+  padding: 2rem 1rem;
+}
+
+.request-shell {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 2rem;
+  max-width: 960px;
+  width: 100%;
+  align-items: stretch;
+}
+
+.request-hero {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  padding: 2.5rem 2rem;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.request-hero img {
+  width: 82px;
+  height: 82px;
+  border-radius: 18px;
+  object-fit: contain;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.75rem;
+}
+
+.request-hero h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.request-hero p {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.6;
+  max-width: 420px;
+}
+
+.request-card {
+  background: #fff;
+  border-radius: 18px;
+  padding: 2.5rem;
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.2);
+  display: flex;
+  flex-direction: column;
+}
+
+.request-card h2 {
+  margin: 0 0 0.6rem;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.request-card .subtitle {
+  margin: 0 0 1.5rem;
+  color: #475569;
+  font-size: 0.95rem;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.submit-btn {
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.error,
+.success {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+
+.error {
+  background: rgba(220, 38, 38, 0.12);
+  color: #b91c1c;
+}
+
+.success {
+  background: rgba(34, 197, 94, 0.12);
+  color: #15803d;
+}
+
+.back-link {
+  margin-top: 1.5rem;
+  text-align: center;
+}
+
+.back-link a {
+  color: #2563eb;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.back-link a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 860px) {
+  .request-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .request-hero {
+    align-items: center;
+    text-align: center;
+  }
+
+  .request-hero p {
+    max-width: none;
+  }
+}

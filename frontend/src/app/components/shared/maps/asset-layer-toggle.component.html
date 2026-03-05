@@ -1,0 +1,36 @@
+<div class="asset-layer-toggle-container">
+  <header class="toggle-header">
+    <h3 class="toggle-title">Asset Layers</h3>
+    <button class="collapse-btn" (click)="toggleCollapse()" [attr.aria-expanded]="!collapsed">
+      <span class="icon">{{ collapsed ? '▼' : '▲' }}</span>
+    </button>
+  </header>
+
+  <div class="layers-list" [class.collapsed]="collapsed">
+    <div *ngFor="let layer of layerConfigs" class="layer-item" [ngStyle]="getLayerColorStyle(layer.color)">
+      <label class="layer-label">
+        <input
+          type="checkbox"
+          [checked]="layer.visible"
+          (change)="toggleLayer(layer.id)"
+          class="layer-checkbox"
+          [attr.aria-label]="'Toggle ' + layer.name"
+        />
+        <span class="layer-name">{{ layer.name }}</span>
+      </label>
+
+      <div class="layer-details">
+        <span class="asset-count badge">
+          <!-- Asset count can be added dynamically -->
+        </span>
+        <span class="color-swatch" [ngStyle]="getColorSwatch(layer.color)" [title]="layer.color"></span>
+      </div>
+    </div>
+  </div>
+
+  <footer class="toggle-footer">
+    <p class="info-text">
+      <strong>Legend:</strong> Each layer represents assets by category. Toggle layers to control map visibility.
+    </p>
+  </footer>
+</div>

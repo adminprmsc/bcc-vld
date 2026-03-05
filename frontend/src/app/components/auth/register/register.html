@@ -1,0 +1,104 @@
+<section class="signup-wrapper">
+  <div class="signup-shell">
+    <aside class="signup-aside">
+      <img src="assets/lds-logo.png" alt="PRMSC" />
+      <h1>Create A Platform Account</h1>
+      <p>Provision secure access for operational teams responsible for requisition routing and verification.</p>
+      <div class="signin-link">Already have an account? <a routerLink="/login">Sign in</a></div>
+    </aside>
+    <div class="signup-card">
+      <header>
+        <h2>User Registration</h2>
+        <p>Complete the profile and assign the appropriate role.</p>
+      </header>
+      <div class="avatar-upload">
+        <div class="avatar-circle">
+          <img *ngIf="avatarUrl" [src]="avatarUrl" alt="Avatar preview" />
+          <span *ngIf="!avatarUrl">Upload Photo</span>
+          <label class="avatar-upload-btn">
+            <input type="file" (change)="onAvatarChange($event)" accept="image/*" hidden />
+            <mat-icon>photo_camera</mat-icon>
+          </label>
+        </div>
+      </div>
+      <form #registerForm="ngForm" (ngSubmit)="onRegister()" class="signup-form">
+        <div class="form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>First Name *</mat-label>
+            <input matInput [(ngModel)]="firstName" name="firstName" required type="text" placeholder="Enter First Name" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Last Name</mat-label>
+            <input matInput [(ngModel)]="lastName" name="lastName" type="text" placeholder="Enter Last Name" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Gender</mat-label>
+            <mat-select [(ngModel)]="gender" name="gender">
+              <mat-option value="Male">Male</mat-option>
+              <mat-option value="Female">Female</mat-option>
+              <mat-option value="Other">Other</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Mobile Number *</mat-label>
+            <input matInput [(ngModel)]="phone" name="phone" required type="text" placeholder="03XXXXXXXXX" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>CNIC</mat-label>
+            <input matInput [(ngModel)]="cnic" name="cnic" type="text" placeholder="13 digit CNIC" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>CNIC Expiry</mat-label>
+            <input matInput [(ngModel)]="cnicExpiry" name="cnicExpiry" type="date" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Date of Birth</mat-label>
+            <input matInput [(ngModel)]="dob" name="dob" type="date" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>User Role</mat-label>
+            <mat-select [(ngModel)]="role" name="role">
+              <mat-option value="Super Admin">Super Admin</mat-option>
+              <mat-option value="Admin">Admin</mat-option>
+              <mat-option value="DM Tehsil">DM Tehsil</mat-option>
+              <mat-option value="Infra Engineer">Infra Engineer</mat-option>
+              <mat-option value="CID">CID</mat-option>
+              <mat-option value="BCC Specialist">BCC Specialist</mat-option>
+              <mat-option value="BCC Officer Tehsil">BCC Officer Tehsil</mat-option>
+              <mat-option value="EDCS Consultant">EDCS Consultant</mat-option>
+              <mat-option value="EDCS User">EDCS User</mat-option>
+              <mat-option value="RA Environment">RA Environment</mat-option>
+              <mat-option value="PCRWR Sampler">PCRWR Sampler</mat-option>
+              <mat-option value="PCRWR Lab">PCRWR Lab</mat-option>
+              <mat-option value="Citizen">Citizen</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Address</mat-label>
+            <input matInput [(ngModel)]="address" name="address" type="text" placeholder="Office or mailing address" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Email Address *</mat-label>
+            <input matInput [(ngModel)]="email" name="email" required type="email" placeholder="name@example.com" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Password</mat-label>
+            <input matInput [(ngModel)]="password" name="password" type="password" placeholder="Temporary password" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Confirm Password</mat-label>
+            <input matInput [(ngModel)]="confirmPassword" name="confirmPassword" type="password" placeholder="Repeat password" />
+          </mat-form-field>
+        </div>
+        <div class="signature-upload">
+          <label>Digital Signature</label>
+          <button mat-raised-button color="primary" type="button" (click)="onSignatureClick()">Select Signature</button>
+          <input type="file" #signatureInput (change)="onSignatureChange($event)" accept="image/*" hidden />
+        </div>
+        <button mat-raised-button class="primary-btn" type="submit">Register User</button>
+        <div *ngIf="error" class="error">{{ error }}</div>
+        <div *ngIf="success" class="success">{{ success }}</div>
+      </form>
+    </div>
+  </div>
+</section>

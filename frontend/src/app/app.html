@@ -1,0 +1,8 @@
+<app-header
+	*ngIf="showHeader()"
+	[appName]="'PROJECT MONITORING AND EVALUATION SYSTEM'"
+	[user]="currentUser"
+	(logout)="onLogout()"
+	(updateProfile)="onUpdateProfile()"
+></app-header>
+<router-outlet />

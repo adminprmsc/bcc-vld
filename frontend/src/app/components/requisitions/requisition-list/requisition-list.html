@@ -1,0 +1,703 @@
+<div class="requisition-list-wrapper">
+	<div class="requisition-list-container">
+		<div class="header-row">
+			<div class="requisition-list-header">Requisitions</div>
+			<button class="create-btn" (click)="openCreateModal()">+ Create Requisition</button>
+		</div>
+		<div class="table-scroll">
+			<table class="requisition-table">
+		<thead>
+			<tr>
+				<th>Title</th>
+				<th>Purpose</th>
+				<th>Tehsil</th>
+				  <th>Land Area</th>
+				<th>Land Type</th>
+				<th>Location</th>
+				<th>Required Date</th>
+				<th>Priority</th>
+				<th>Status</th>
+				<th>Actions</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr *ngFor="let req of requisitions">
+				<td>{{ req.title }}</td>
+				<td>{{ req.purpose }}</td>
+				<td>{{ req.tehsil }}</td>
+							<td>
+								{{ req.landArea || (req.calculatedAreaSqFt ? (req.calculatedAreaSqFt | number:'1.0-0') + ' sq ft' : 'N/A') }}
+							</td>
+				<td>{{ req.landType }}</td>
+								<td>
+														<div class="location-address" *ngIf="req.location?.address">{{ req.location.address }}</div>
+														<div class="location-coordinates" *ngIf="req.location?.coordinateString">
+															{{ req.location.coordinateString }}
+														</div>
+														<div class="location-placeholder" *ngIf="!req.location?.address && !req.location?.coordinateString">—</div>
+								</td>
+				<td>{{ req.requiredDate | date:'mediumDate' }}</td>
+				<td>{{ req.priority }}</td>
+				<td>{{ req.status }}</td>
+				<td>
+					<button class="action-btn" (click)="viewRequisition(req)">View</button>
+					<button class="action-btn ghost" type="button" (click)="downloadRequisitionPdf(req)" [disabled]="downloadingPdf">
+						{{ downloadingPdf ? 'Preparing...' : 'PDF' }}
+					</button>
+					<button class="action-btn accent" type="button" (click)="downloadDueDiligencePdf(req)" [disabled]="downloadingDueDiligence" *ngIf="req.landAcquisition?.status">
+						{{ downloadingDueDiligence ? '...' : 'Due Diligence' }}
+					</button>
+				</td>
+			</tr>
+		</tbody>
+			</table>
+		</div>
+
+	<div class="repository-panel">
+		<div class="repository-header">
+			<div class="repository-title">Land Acquisition Repository</div>
+			<div class="repository-meta">
+				<span class="repository-count">{{ landRepository.length }} records</span>
+				<button type="button" class="download-btn" (click)="exportLandRepository()">Download Excel</button>
+			</div>
+		</div>
+		<ng-container *ngIf="landRepository.length; else noLandRecords">
+			<div class="table-scroll repository-scroll">
+				<table class="repository-table">
+					<thead>
+						<tr>
+							<th>Requisition</th>
+							<th>Stage</th>
+							<th>Land Type</th>
+							<th>Donor</th>
+							<th>Area / Khasra</th>
+							<th>Tehsil</th>
+							<th>Updated On</th>
+							<th>Updated By</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr *ngFor="let record of landRepository">
+							<td>{{ record.title }}</td>
+							<td>{{ record.landAcquisition?.status || '—' }}</td>
+							<td>{{ record.landAcquisition?.type || record.landType || '—' }}</td>
+							<td>{{ record.landAcquisition?.donor?.fullName || '—' }}</td>
+							<td>
+								<span *ngIf="record.landAcquisition?.land?.khasraNumber; else fallbackArea">
+									{{ record.landAcquisition.land.khasraNumber }}
+									<span *ngIf="record.landAcquisition.land.area"> · {{ record.landAcquisition.land.area }}</span>
+								</span>
+								<ng-template #fallbackArea>
+									{{ record.calculatedAreaSqFt ? (record.calculatedAreaSqFt | number:'1.0-0') + ' sq ft' : '—' }}
+								</ng-template>
+							</td>
+							<td>{{ record.tehsil || '—' }}</td>
+							<td>{{ record.landAcquisition?.updatedAt | date:'medium' }}</td>
+							<td>{{ record.landAcquisition?.updatedBy?.name || record.landAcquisition?.updatedBy?.email || '—' }}</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</ng-container>
+		<ng-template #noLandRecords>
+			<div class="repository-empty">No land acquisition records captured yet.</div>
+		</ng-template>
+	</div>
+
+	<div class="requisition-modal-overlay" *ngIf="selectedRequisition">
+		<div class="requisition-modal landscape-modal">
+			<div class="modal-header">
+				<span class="modal-title">Requisition Details</span>
+				<button class="close-btn" type="button" (click)="closeModal()" aria-label="Close">&#10005;</button>
+			</div>
+			<div class="form-grid">
+				<div class="workflow-overview" *ngIf="workflowTimeline.length">
+					<div class="workflow-overview-header">
+						<div>
+							<div class="workflow-badge">Workflow Status</div>
+							<div class="workflow-overview-title">{{ selectedRequisition?.status || '—' }}</div>
+						</div>
+						<div class="workflow-overview-assignee">
+							<span class="assignee-label">Assigned To</span>
+							<span class="assignee-value">{{ displayAssignedTo(selectedRequisition) }}</span>
+						</div>
+					</div>
+					<div class="workflow-timeline">
+						<div
+							class="workflow-stage"
+							*ngFor="let stage of workflowTimeline; let last = last"
+							[class.stage-complete]="stage.state === 'complete'"
+							[class.stage-active]="stage.state === 'active'"
+							[class.stage-last]="last"
+						>
+							<div class="workflow-stage-dot"></div>
+							<div class="workflow-stage-body">
+								<div class="workflow-stage-label">{{ stage.label }}</div>
+								<div class="workflow-stage-role">{{ stage.role }}</div>
+								<div class="workflow-stage-desc">{{ stage.description }}</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="form-row">
+					<div class="form-col">
+						<label class="modal-label">Title</label>
+						<div class="modal-value">{{ selectedRequisition.title }}</div>
+					</div>
+					<div class="form-col">
+						<label class="modal-label">Purpose/Proposed Activity</label>
+						<div class="modal-value">{{ selectedRequisition.purpose }}</div>
+					</div>
+				</div>
+				<div class="form-row">
+					<div class="form-col">
+						<label class="modal-label">Tehsil</label>
+						<div class="modal-value">{{ selectedRequisition.tehsil }}</div>
+					</div>
+					<div class="form-col">
+						<label class="modal-label">Land Area</label>
+						<div class="modal-value">{{ selectedRequisition.landArea }}</div>
+					</div>
+				</div>
+				<div class="form-row">
+					<div class="form-col">
+						<label class="modal-label">Land Type</label>
+						<select class="modal-input" [value]="selectedRequisition.landType" disabled>
+							<option value="Govt Land" [selected]="selectedRequisition.landType === 'Govt Land'">Govt Land</option>
+							<option value="Private Land" [selected]="selectedRequisition.landType === 'Private Land'">Private Land</option>
+						</select>
+					</div>
+					<div class="form-col">
+						<label class="modal-label">Required Date</label>
+						<div class="modal-value">{{ selectedRequisition.requiredDate | date:'mediumDate' }}</div>
+					</div>
+				</div>
+				<div class="form-row">
+					<div class="form-col">
+						<label class="modal-label">Priority</label>
+						<div class="modal-value">{{ selectedRequisition.priority }}</div>
+					</div>
+					<div class="form-col">
+						<label class="modal-label">Estimated Value</label>
+						<div class="modal-value">{{ selectedRequisition.estimatedValue }}</div>
+					</div>
+				</div>
+				<div class="form-row">
+					<div class="form-col">
+									<label class="modal-label">Land Breadth (ft)</label>
+									<div class="modal-value">{{ selectedRequisition.landBreadth || 'N/A' }}</div>
+					</div>
+					<div class="form-col">
+						<label class="modal-label">Land Depth (ft)</label>
+									<div class="modal-value">{{ selectedRequisition.landDepth || 'N/A' }}</div>
+					</div>
+				</div>
+				<div class="form-row">
+					<div class="form-col-full">
+						<label class="modal-label">Calculated Area</label>
+									<div class="modal-value" *ngIf="selectedRequisition.calculatedAreaSqFt; else noArea">
+										{{ selectedRequisition.calculatedAreaSqFt | number:'1.0-0' }} sq ft,
+										{{ selectedRequisition.calculatedAreaMarlas | number:'1.0-2' }} marlas,
+										{{ selectedRequisition.calculatedAreaKanals | number:'1.0-2' }} kanals
+									</div>
+									<ng-template #noArea>
+										<div class="modal-value">N/A</div>
+									</ng-template>
+					</div>
+				</div>
+				<div class="form-row">
+					<div class="form-col-full">
+									<label class="modal-label">Location</label>
+																		<div class="modal-value">
+																			<div *ngIf="selectedRequisition.location?.address" class="location-address">{{ selectedRequisition.location.address }}</div>
+																													<div *ngIf="selectedRequisition.location?.coordinateString" class="location-coordinates">
+																														Coordinates · {{ selectedRequisition.location.coordinateString }}
+																			</div>
+																													<div *ngIf="!selectedRequisition.location?.address && !selectedRequisition.location?.coordinateString">N/A</div>
+																		</div>
+						<div class="map-editor-card">
+							<div class="map-toolbar">
+								<div class="map-summary-text">{{ mapDraftSummary }}</div>
+								<div class="map-toolbar-actions">
+									<ng-container *ngIf="canEditMap(selectedRequisition); else mapReadOnlyTag">
+										<button *ngIf="!mapEditing" class="action-btn" type="button" [disabled]="mapSaving" (click)="editMap()">Edit Map</button>
+										<div *ngIf="mapEditing" class="map-draw-controls">
+											<button type="button" class="map-tool-btn" [disabled]="mapSaving" (click)="setMapDrawingMode('marker')">Marker</button>
+											<button type="button" class="map-tool-btn" [disabled]="mapSaving" (click)="setMapDrawingMode('polyline')">Path</button>
+											<button type="button" class="map-tool-btn" [disabled]="mapSaving" (click)="setMapDrawingMode('polygon')">Area</button>
+											<button type="button" class="map-tool-btn ghost" [disabled]="mapSaving" (click)="clearMapDraft()">Clear</button>
+										</div>
+									</ng-container>
+									<ng-template #mapReadOnlyTag>
+										<span class="map-readonly-tag">View Only</span>
+									</ng-template>
+								</div>
+							</div>
+							<div class="map-canvas">
+								<app-map-workspace
+									#detailWorkspace
+									[plans]="mapPlans"
+									[highlightedPlanId]="mapHighlightedPlanId"
+									[draftFeature]="mapDraftFeature"
+									[showProjectPlans]="!mapEditing"
+									(draftFeatureChange)="onMapDraftFeatureChange($event)"
+									(draftSummaryChange)="onMapDraftSummaryChange($event)"
+									(mapReady)="onMapReady($event)"
+								></app-map-workspace>
+							</div>
+							<div class="map-empty-hint" *ngIf="!mapHasGeometry && !mapEditing">
+								No map geometry captured yet. Click Edit Map to drop a marker or draw the footprint.
+							</div>
+							<div class="map-actions" *ngIf="mapEditing">
+								<button class="action-btn" type="button" [disabled]="mapSaving" (click)="saveMapEdits()">
+									{{ mapSaving ? 'Saving...' : 'Save Map' }}
+								</button>
+								<button class="action-btn ghost" type="button" [disabled]="mapSaving" (click)="cancelMapEditing()">
+									Cancel
+								</button>
+							</div>
+							<div class="map-error" *ngIf="mapError">{{ mapError }}</div>
+						</div>
+					</div>
+				</div>
+				<div class="form-row">
+					<div class="form-col-full">
+									<label class="modal-label">Supporting Documents</label>
+									<ul class="modal-value">
+										<li *ngFor="let doc of selectedRequisition.supportingDocs">{{ doc }}</li>
+										<li *ngFor="let att of selectedRequisition.attachments">{{ att }}</li>
+										<li *ngIf="(!selectedRequisition.supportingDocs || selectedRequisition.supportingDocs.length === 0) && (!selectedRequisition.attachments || selectedRequisition.attachments.length === 0)">No documents uploaded</li>
+									</ul>
+					</div>
+				</div>
+				<div class="form-row">
+					<div class="form-col-full">
+						<label class="modal-label">Land Due Diligence</label>
+						<ng-container *ngIf="dueDiligenceGovtEntries.length || dueDiligencePrivateEntries.length; else noDueDiligence">
+							<div class="due-diligence-view">
+								<div class="due-card" *ngIf="dueDiligenceGovtEntries.length">
+									<div class="due-card-title">
+										<span>Government Land Checklist</span>
+										<span class="due-card-count">{{ dueDiligenceGovtEntries.length }} responses</span>
+									</div>
+									<div class="due-grid">
+										<div class="due-item" *ngFor="let entry of dueDiligenceGovtEntries">
+											<div class="due-question">{{ entry.id }}. {{ entry.prompt }}</div>
+											<div class="due-answer">{{ entry.response }}</div>
+											<div class="due-helper" *ngIf="entry.helper">{{ entry.helper }}</div>
+										</div>
+									</div>
+								</div>
+								<div class="due-card" *ngIf="dueDiligencePrivateEntries.length">
+									<div class="due-card-title">
+										<span>Private Land Checklist</span>
+										<span class="due-card-count">{{ dueDiligencePrivateEntries.length }} responses</span>
+									</div>
+									<div class="due-grid">
+										<div class="due-item" *ngFor="let entry of dueDiligencePrivateEntries">
+											<div class="due-question">{{ entry.id }}. {{ entry.prompt }}</div>
+											<div class="due-answer">{{ entry.response }}</div>
+											<div class="due-helper" *ngIf="entry.helper">{{ entry.helper }}</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</ng-container>
+						<ng-template #noDueDiligence>
+							<div class="due-empty-state">No due diligence responses submitted for this requisition.</div>
+						</ng-template>
+					</div>
+				</div>
+
+					<!-- Land request history -->
+					<div class="form-row">
+						<div class="form-col-full">
+							<label class="modal-label">Land Request History</label>
+							<div class="activity-log">
+								<div *ngIf="!selectedRequisition.activityLog || selectedRequisition.activityLog.length === 0" class="log-empty">No history yet</div>
+								<div *ngFor="let a of selectedRequisition.activityLog" class="log-entry">
+									<div class="log-meta">
+										<span class="log-action">{{ a.action }}</span>
+										<span class="log-user">{{ a.user?.name || a.user || 'Unknown' }}</span>
+										<span class="log-time">{{ a.timestamp | date:'medium' }}</span>
+										<span class="log-target" *ngIf="a.meta?.toStatus">↺ {{ a.meta.toStatus }}</span>
+									</div>
+									<div class="log-remarks" *ngIf="a.remarks">{{ a.remarks }}</div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="form-row land-section">
+						<div class="form-col-full">
+							<div class="land-section-header">
+								<label class="modal-label">Land Acquisition</label>
+								<div class="land-section-actions" *ngIf="canEditLandAcquisition(selectedRequisition) || canMarkLandAcquisitionComplete(selectedRequisition)">
+									<button
+										*ngIf="selectedRequisition.landAcquisition && canMarkLandAcquisitionComplete(selectedRequisition)"
+										class="action-btn ghost"
+										type="button"
+										[disabled]="landSubmitting"
+										(click)="markLandAcquisitionComplete()"
+									>
+										{{ landSubmitting ? 'Saving...' : 'Mark Land Acquisition as Complete' }}
+									</button>
+									<button *ngIf="canEditLandAcquisition(selectedRequisition)" class="action-btn" type="button" (click)="toggleLandForm()">
+										{{ landFormVisible ? 'Close Land Form' : (selectedRequisition.landAcquisition ? 'Update Land Details' : 'Add Land Details') }}
+									</button>
+								</div>
+							</div>
+							<div class="land-summary" *ngIf="selectedRequisition.landAcquisition; else landEmptyState">
+								<div class="land-summary-grid">
+									<div class="land-summary-item">
+										<span class="land-summary-label">Stage</span>
+										<span class="land-summary-value">{{ selectedRequisition.landAcquisition?.status || '—' }}</span>
+									</div>
+									<div class="land-summary-item">
+										<span class="land-summary-label">Land Type</span>
+										<span class="land-summary-value">{{ selectedRequisition.landAcquisition?.type || selectedRequisition.landType || '—' }}</span>
+									</div>
+									<div class="land-summary-item">
+										<span class="land-summary-label">Donor</span>
+										<span class="land-summary-value">{{ selectedRequisition.landAcquisition?.donor?.fullName || '—' }}</span>
+									</div>
+									<div class="land-summary-item">
+										<span class="land-summary-label">Contact</span>
+										<span class="land-summary-value">{{ selectedRequisition.landAcquisition?.donor?.contactNumber || '—' }}</span>
+									</div>
+									<div class="land-summary-item">
+										<span class="land-summary-label">CNIC</span>
+										<span class="land-summary-value">{{ selectedRequisition.landAcquisition?.donor?.cnic || '—' }}</span>
+									</div>
+									<div class="land-summary-item">
+										<span class="land-summary-label">Khasra / Area</span>
+										<span class="land-summary-value">
+											{{ selectedRequisition.landAcquisition?.land?.khasraNumber || '—' }}
+											<ng-container *ngIf="selectedRequisition.landAcquisition?.land?.area">
+												 · {{ selectedRequisition.landAcquisition.land.area }}
+											</ng-container>
+										</span>
+									</div>
+									<div class="land-summary-item">
+										<span class="land-summary-label">Location</span>
+										<span class="land-summary-value">
+											{{ selectedRequisition.landAcquisition?.donor?.villageName || '—' }}
+											<ng-container *ngIf="selectedRequisition.landAcquisition?.donor?.tehsil">
+												 · {{ selectedRequisition.landAcquisition?.donor?.tehsil }}
+											</ng-container>
+											<ng-container *ngIf="selectedRequisition.landAcquisition?.donor?.district">
+												 · {{ selectedRequisition.landAcquisition?.donor?.district }}
+											</ng-container>
+										</span>
+									</div>
+									<div class="land-summary-item">
+										<span class="land-summary-label">Last Updated</span>
+										<span class="land-summary-value">
+											{{ selectedRequisition.landAcquisition?.updatedAt | date:'medium' }}
+											<ng-container *ngIf="selectedRequisition.landAcquisition?.updatedBy?.name">
+												 · {{ selectedRequisition.landAcquisition?.updatedBy?.name }}
+											</ng-container>
+										</span>
+									</div>
+								</div>
+								<div class="land-summary-docs" *ngIf="selectedRequisition.landAcquisition?.donation?.attachedDocuments?.length">
+									<span class="land-summary-label">Supporting Documents</span>
+									<div class="land-doc-chip" *ngFor="let doc of selectedRequisition.landAcquisition?.donation?.attachedDocuments">
+										<span class="land-doc-name">{{ doc }}</span>
+										<a
+											*ngIf="attachmentUrl(doc) as docUrl"
+											class="land-doc-link"
+											[href]="docUrl"
+											target="_blank"
+											rel="noopener"
+										>
+											View
+										</a>
+									</div>
+								</div>
+								<div class="land-summary-docs" *ngIf="selectedRequisition.landAcquisition?.land?.ownershipProof">
+									<span class="land-summary-label">Ownership Proof</span>
+									<div class="land-doc-chip">
+										<span class="land-doc-name">{{ selectedRequisition.landAcquisition?.land?.ownershipProof }}</span>
+										<a
+											*ngIf="attachmentUrl(selectedRequisition.landAcquisition?.land?.ownershipProof) as proofUrl"
+											class="land-doc-link"
+											[href]="proofUrl"
+											target="_blank"
+											rel="noopener"
+										>
+											View
+										</a>
+									</div>
+								</div>
+							</div>
+							<ng-template #landEmptyState>
+								<div class="land-empty-state">No land acquisition details captured yet.</div>
+							</ng-template>
+
+							<div class="land-form-container" *ngIf="landFormVisible">
+								<div class="land-alert error" *ngIf="landError">{{ landError }}</div>
+
+								<div class="land-card">
+									<div class="land-card-title">Land Basics</div>
+									<div class="land-card-grid">
+										<label class="land-field">
+											<span>Land Type</span>
+											<select class="modal-input" [(ngModel)]="landForm.type" name="landTypeSelect">
+												<option *ngFor="let opt of landTypeOptions" [value]="opt">{{ opt }}</option>
+											</select>
+										</label>
+										<label class="land-field">
+											<span>Acquisition Stage *</span>
+											<select class="modal-input" [(ngModel)]="landForm.status" name="landStatusSelect">
+												<option value="">Select stage</option>
+												<option *ngFor="let status of landStatusOptions" [value]="status">{{ status }}</option>
+											</select>
+										</label>
+									</div>
+								</div>
+
+								<div class="land-card">
+									<div class="land-card-title">Donor Details</div>
+									<div class="land-card-grid">
+										<label class="land-field">
+											<span>Full Name</span>
+											<input class="modal-input" type="text" [(ngModel)]="landForm.donor.fullName" name="landDonorName" placeholder="Donor full name">
+										</label>
+										<label class="land-field">
+											<span>CNIC</span>
+											<input class="modal-input" type="text" [(ngModel)]="landForm.donor.cnic" name="landDonorCnic" placeholder="Identification number">
+										</label>
+										<label class="land-field">
+											<span>Contact Number</span>
+											<input class="modal-input" type="text" [(ngModel)]="landForm.donor.contactNumber" name="landDonorContact" placeholder="Phone number">
+										</label>
+										<label class="land-field">
+											<span>Address</span>
+											<input class="modal-input" type="text" [(ngModel)]="landForm.donor.address" name="landDonorAddress" placeholder="Mailing address">
+										</label>
+										<label class="land-field">
+											<span>Village</span>
+											<input class="modal-input" type="text" [(ngModel)]="landForm.donor.villageName" name="landDonorVillage" placeholder="Village name">
+										</label>
+										<label class="land-field">
+											<span>Tehsil</span>
+											<input class="modal-input" type="text" [(ngModel)]="landForm.donor.tehsil" name="landDonorTehsil" placeholder="Tehsil">
+										</label>
+										<label class="land-field">
+											<span>District</span>
+											<input class="modal-input" type="text" [(ngModel)]="landForm.donor.district" name="landDonorDistrict" placeholder="District">
+										</label>
+									</div>
+								</div>
+
+								<div class="land-card">
+									<div class="land-card-title">Land Details</div>
+									<div class="land-card-grid">
+										<label class="land-field">
+											<span>Khasra Number</span>
+											<input class="modal-input" type="text" [(ngModel)]="landForm.land.khasraNumber" name="landKhasraNumber" placeholder="Khasra number">
+										</label>
+										<label class="land-field">
+											<span>Recorded Area</span>
+											<input class="modal-input" type="text" [(ngModel)]="landForm.land.area" name="landRecordedArea" placeholder="Area description">
+										</label>
+										<label class="land-field">
+											<span>Land Category</span>
+											<input class="modal-input" type="text" [(ngModel)]="landForm.land.landCategory" name="landCategory" placeholder="Agricultural, residential, etc.">
+										</label>
+										<label class="land-field">
+											<span>Current Use</span>
+											<input class="modal-input" type="text" [(ngModel)]="landForm.land.currentUse" name="landCurrentUse" placeholder="Current utilization">
+										</label>
+										<label class="land-field">
+											<span>Latitude</span>
+											<input class="modal-input" type="text" [(ngModel)]="landForm.land.latitude" name="landLatitude" placeholder="e.g. 33.6844">
+										</label>
+										<label class="land-field">
+											<span>Longitude</span>
+											<input class="modal-input" type="text" [(ngModel)]="landForm.land.longitude" name="landLongitude" placeholder="e.g. 73.0479">
+										</label>
+										<label class="land-field">
+											<span>Mutation Number</span>
+											<input class="modal-input" type="text" [(ngModel)]="landForm.land.mutationNumber" name="landMutationNumber" placeholder="Mutation reference">
+										</label>
+									</div>
+								</div>
+
+								<div class="land-card">
+									<div class="land-card-title">Donation &amp; Verification</div>
+									<div class="land-card-grid">
+										<label class="land-field">
+											<span>Donation Type</span>
+											<input class="modal-input" type="text" [(ngModel)]="landForm.donation.donationType" name="landDonationType" placeholder="Gift, exchange, purchase, etc.">
+										</label>
+										<label class="land-field">
+											<span>Purpose</span>
+											<input class="modal-input" type="text" [(ngModel)]="landForm.donation.purpose" name="landDonationPurpose" placeholder="Intended use">
+										</label>
+										<label class="land-field">
+											<span>Willingness Date</span>
+											<input class="modal-input" type="date" [(ngModel)]="landForm.donation.willingnessDate" name="landWillingnessDate">
+										</label>
+										<label class="land-field">
+											<span>Verification By</span>
+											<input class="modal-input" type="text" [(ngModel)]="landForm.verification.verifiedBy" name="landVerifiedBy" placeholder="Verifier name">
+										</label>
+										<label class="land-field">
+											<span>Verification Date</span>
+											<input class="modal-input" type="date" [(ngModel)]="landForm.verification.verifiedDate" name="landVerifiedDate">
+										</label>
+										<label class="land-field">
+											<span>Approved By</span>
+											<input class="modal-input" type="text" [(ngModel)]="landForm.verification.approvedBy" name="landApprovedBy" placeholder="Approval authority">
+										</label>
+										<label class="land-field">
+											<span>Approval Status</span>
+											<input class="modal-input" type="text" [(ngModel)]="landForm.verification.approvalStatus" name="landApprovalStatus" placeholder="Approval outcome">
+										</label>
+									</div>
+									<label class="land-field full-width">
+										<span>Remarks</span>
+										<textarea class="modal-textarea" rows="3" [(ngModel)]="landForm.donation.remarks" name="landDonationRemarks" placeholder="Additional notes"></textarea>
+									</label>
+								</div>
+
+								<div class="land-card">
+									<div class="land-card-title">Attachments</div>
+									<div class="land-upload-group">
+										<div class="upload-field">
+											<label>Ownership Proof</label>
+											<input type="file" #ownershipProofInput (change)="onOwnershipProofSelected($event)" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+											<div class="land-doc-chip" *ngIf="ownershipProofName">
+												{{ ownershipProofName }}
+												<button type="button" class="chip-remove" (click)="clearOwnershipProofSelection()">x</button>
+											</div>
+											<ng-container *ngIf="!ownershipProofName && selectedRequisition.landAcquisition?.land?.ownershipProof as existingProof">
+												<div class="land-doc-chip muted">
+													<span>Current:</span>
+													<span class="land-doc-name">{{ existingProof }}</span>
+													<a
+														*ngIf="attachmentUrl(existingProof) as proofUrl"
+														class="land-doc-link"
+														[href]="proofUrl"
+														target="_blank"
+														rel="noopener"
+													>
+														View
+													</a>
+												</div>
+											</ng-container>
+										</div>
+										<div class="upload-field">
+											<label>Supporting Documents</label>
+											<input type="file" #landDocumentsInput multiple (change)="onLandDocumentsSelected($event)" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+											<div class="land-doc-chip" *ngFor="let doc of landNewDocuments; let i = index">
+												{{ doc.name }}
+												<button type="button" class="chip-remove" (click)="removeNewDocument(i)">x</button>
+											</div>
+										</div>
+										<div class="upload-field" *ngIf="landExistingDocs.length">
+											<label>Keep Existing Documents</label>
+											<div class="land-checkbox" *ngFor="let doc of landExistingDocs">
+												<label>
+													<input type="checkbox" [checked]="landKeepAttachmentMap[doc]" (change)="handleKeepAttachmentToggle(doc, $event.target.checked)">
+													<span>{{ doc }}</span>
+												</label>
+												<a
+													*ngIf="attachmentUrl(doc) as docUrl"
+													class="land-doc-link"
+													[href]="docUrl"
+													target="_blank"
+													rel="noopener"
+													(click)="$event.stopPropagation()"
+												>
+													View
+												</a>
+											</div>
+										</div>
+									</div>
+								</div>
+
+								<div class="land-form-actions">
+									<button class="action-btn" type="button" [disabled]="landSubmitting" (click)="submitLandAcquisition()">
+										{{ landSubmitting ? 'Saving...' : 'Save Land Details' }}
+									</button>
+									<button class="action-btn ghost" type="button" [disabled]="landSubmitting" (click)="cancelLandForm()">Cancel</button>
+								</div>
+							</div>
+						</div>
+					</div>
+				<div class="form-row">
+					<div class="form-col-full">
+						<label class="modal-label">Description</label>
+						<div class="modal-value">{{ selectedRequisition.description }}</div>
+					</div>
+				</div>
+
+				<!-- Role-based workflow actions -->
+				<div class="form-row" *ngIf="selectedRequisition">
+					<div class="form-col-full">
+						<label class="modal-label">Actions</label>
+						<div class="modal-value">
+							<button *ngIf="canDmForward(selectedRequisition)" class="action-btn" (click)="forwardFromDmToBcc()">
+								Forward to BCC Officer
+							</button>
+							<button *ngIf="canBccForwardToTm(selectedRequisition)" class="action-btn" (click)="bccForwardToTm()">
+								Forward to Tehsil Manager
+							</button>
+							<button *ngIf="canTmForwardChief(selectedRequisition)" class="action-btn" (click)="tmForwardToChief()">
+								Send to BCC Specialist
+							</button>
+							<button *ngIf="canChiefForwardToBcc(selectedRequisition)" class="action-btn" (click)="chiefForwardToBcc()">
+								Return to BCC for WB Dispatch
+							</button>
+							<button *ngIf="canBccForwardToWb(selectedRequisition)" class="action-btn" (click)="bccForwardToWb()">
+								Forward to WB User
+							</button>
+							<button *ngIf="canWbApprove(selectedRequisition)" class="action-btn" (click)="wbApprove()">
+								WB Approve
+							</button>
+							<button *ngIf="canChiefMarkToTm(selectedRequisition)" class="action-btn" (click)="chiefMarkToTm()">
+								Mark to Tehsil Manager
+							</button>
+							<button *ngIf="canTmForwardBccClosure(selectedRequisition)" class="action-btn" (click)="tmForwardToBccClosure()">
+								Send to BCC for Closure
+							</button>
+							<button *ngIf="canBccClose(selectedRequisition)" class="action-btn" (click)="bccCloseCase()">
+								Close Case
+							</button>
+
+							<div *ngIf="showWorkflowRemarks(selectedRequisition)" class="workflow-remarks">
+								<label class="remarks-label">Remarks (required for workflow automation)</label>
+								<textarea class="remarks-input" rows="2" [(ngModel)]="workflowRemarks" placeholder="Enter remarks before advancing"></textarea>
+							</div>
+
+							<div *ngIf="role !== 'Citizen'" class="revert-block">
+								<label class="revert-label">Revert Case</label>
+								<p class="revert-hint">Send the request back with a mandatory justification and optional target stage.</p>
+								<select class="revert-select" [(ngModel)]="revertStatus" name="revertStatus">
+									<option value="">Select stage (optional)</option>
+									<option *ngFor="let opt of revertTargets" [value]="opt">{{ opt }}</option>
+								</select>
+								<textarea class="revert-input" rows="3" placeholder="Provide justification (required)" [(ngModel)]="revertRemarks" name="revertRemarks"></textarea>
+								<button type="button" class="action-btn critical" [disabled]="!(revertRemarks && revertRemarks.trim())" (click)="revertCurrentRequisition()">
+									Revert with Justification
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="requisition-modal-overlay" *ngIf="showCreateModal">
+		<div class="requisition-modal landscape-modal">
+			<div class="modal-header">
+				<span class="modal-title">Create Requisition</span>
+				<button class="close-btn" type="button" (click)="closeCreateModal()" aria-label="Close">&#10005;</button>
+			</div>
+			<app-requisition-create (created)="closeCreateModal($event)" (close)="closeCreateModal()"></app-requisition-create>
+		</div>
+	</div>
+</div>

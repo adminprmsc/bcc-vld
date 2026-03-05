@@ -1,0 +1,73 @@
+<header class="app-header">
+  <div class="brand-area">
+    <div class="brand-logo">
+      <img src="assets/prmsc-logo.png" alt="PRMSC Logo" />
+    </div>
+    <div class="brand-copy">
+      <span class="brand-title">{{ appName }}</span>
+      <span class="brand-sub">Voluntary Land Donation System</span>
+    </div>
+  </div>
+
+  <div class="header-toolbar">
+    <div class="role-chip">{{ userRoleLabel() }}</div>
+  <a class="ghost-btn" routerLink="/support" routerLinkActive="active" title="Open support">Support</a>
+    <button type="button" class="icon-btn" (click)="toggleNotifications()" title="Notifications">
+      <span class="material-icons">notifications</span>
+      <span class="status-dot" *ngIf="unreadCount() > 0">{{ unreadCount() }}</span>
+    </button>
+    <div class="notifications-popover" *ngIf="showNotifications">
+      <header>
+        <span>Notifications</span>
+        <button type="button" (click)="toggleNotifications()" aria-label="Close notifications">
+          <span class="material-icons">close</span>
+        </button>
+      </header>
+      <section *ngIf="notifications().length; else noNotifications">
+        <article *ngFor="let item of notifications(); trackBy: notificationTrackBy" [class.is-unread]="!item.read">
+          <div class="notification-text">
+            <h3>{{ item.title || 'Workflow Update' }}</h3>
+            <p>{{ item.message }}</p>
+          </div>
+          <span class="notification-meta">{{ formatNotificationDate(item.createdAt) }}</span>
+        </article>
+      </section>
+      <ng-template #noNotifications>
+        <p class="empty-state">You are all caught up.</p>
+      </ng-template>
+      <footer>
+        <button type="button" class="clear-btn" (click)="clearNotifications()">Clear</button>
+        <button type="button" class="mark-btn" (click)="markAllNotificationsRead()">Mark all read</button>
+      </footer>
+    </div>
+    <button type="button" class="user-chip" (click)="onUpdateProfile()" title="View profile">
+      <span class="user-initials">{{ userInitials() }}</span>
+      <div class="user-meta">
+        <span class="user-name">{{ currentUser()?.name || 'Guest User' }}</span>
+        <span class="user-role">{{ userRoleLabel() }}</span>
+      </div>
+      <span class="material-icons chevron">expand_more</span>
+    </button>
+    <button type="button" class="logout-btn" (click)="confirmLogout()" title="Logout">
+      <span class="material-icons">logout</span>
+      <span>Logout</span>
+    </button>
+  </div>
+
+  <div *ngIf="showLogoutConfirm" class="logout-dialog-overlay">
+    <div class="logout-dialog">
+      <div class="dialog-title">Sign out of the workspace?</div>
+      <p class="dialog-copy">You will be returned to the login screen and can sign back in anytime.</p>
+      <div class="dialog-actions">
+        <button class="confirm-btn" (click)="onLogout()">Yes, log me out</button>
+        <button class="cancel-btn" (click)="showLogoutConfirm=false">Stay signed in</button>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="showProfileUpdate" class="profile-dialog-overlay">
+    <div class="profile-dialog">
+      <app-user-update [user]="currentUser()" (close)="onProfileModalClosed()" (saved)="onProfileSaved($event)"></app-user-update>
+    </div>
+  </div>
+</header>

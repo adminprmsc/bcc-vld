@@ -1,0 +1,40 @@
+<div class="map-workspace" role="region" aria-label="PRMSC asset map">
+  <div class="map-controls" aria-label="Map controls" *ngIf="controlsVisible">
+    <form class="map-search" (ngSubmit)="submitCoordinateSearch()" novalidate>
+      <label class="sr-only" for="workspace-coordinate-search">Search coordinates</label>
+      <input
+        id="workspace-coordinate-search"
+        type="text"
+        name="coordinateQuery"
+        [(ngModel)]="searchQuery"
+        (ngModelChange)="clearSearchFeedback()"
+        placeholder="Lat Lon or Lon Lat"
+        autocapitalize="off"
+        autocorrect="off"
+        spellcheck="false"
+      />
+      <button type="submit">Fly To</button>
+    </form>
+
+    <div class="map-basemap">
+      <label class="map-basemap-label" for="workspace-basemap">Basemap</label>
+      <select
+        id="workspace-basemap"
+        name="basemapPicker"
+        [(ngModel)]="selectedBasemap"
+        (ngModelChange)="setBasemap($event)"
+      >
+        <option *ngFor="let basemap of basemaps" [ngValue]="basemap.id">
+          {{ basemap.label }}
+        </option>
+      </select>
+    </div>
+
+    <p *ngIf="searchError" class="map-search-feedback" role="alert">{{ searchError }}</p>
+    <p *ngIf="!searchError && searchResultMessage" class="map-search-feedback success" role="status">
+      {{ searchResultMessage }}
+    </p>
+  </div>
+
+  <div #mapContainer class="map-canvas" aria-hidden="true"></div>
+</div>

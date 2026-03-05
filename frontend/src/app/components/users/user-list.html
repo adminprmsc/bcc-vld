@@ -1,0 +1,117 @@
+<div class="user-management-wrapper">
+  <header class="page-header">
+    <div class="page-title">
+      <h1>Team Administration</h1>
+      <p>Monitor onboarding requests and maintain the active roster for requisition workflow.</p>
+    </div>
+    <div class="header-metrics">
+      <div class="metric" *ngIf="isAdminRole()">
+        <span class="metric-label">Pending Requests</span>
+  <span class="metric-value">{{ accessRequests.length || 0 }}</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Registered Users</span>
+  <span class="metric-value">{{ users.length || 0 }}</span>
+      </div>
+    </div>
+  </header>
+
+  <section *ngIf="isAdminRole()" class="card access-requests">
+    <header class="card-header">
+      <div>
+        <h2>Pending Access Requests</h2>
+        <p>Review submissions from prospective users and approve or reject them with a single click.</p>
+      </div>
+    </header>
+    <div class="card-body">
+      <div *ngIf="loadingRequests" class="info-banner loading">Loading requests…</div>
+      <div *ngIf="!loadingRequests && accessRequests.length === 0" class="info-banner empty">No pending requests.</div>
+      <div *ngIf="!loadingRequests && accessRequests.length > 0" class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Requested Role</th>
+              <th>Tehsil / Office</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let request of accessRequests">
+              <td>
+                <div class="primary-text">{{ request.name }}</div>
+                <div class="secondary-text" *ngIf="request.createdAt">{{ request.createdAt | date:'medium' }}</div>
+              </td>
+              <td>{{ request.email }}</td>
+              <td>{{ request.phone }}</td>
+              <td>{{ request.roleRequested }}</td>
+              <td>{{ request.tehsil || '—' }}</td>
+              <td>
+                <span class="status-badge" [ngClass]="request.status?.toLowerCase()">{{ request.status }}</span>
+              </td>
+              <td class="actions">
+                <button class="action-btn approve" (click)="approveRequest(request)">Approve</button>
+                <button class="action-btn reject" (click)="rejectRequest(request)">Reject</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="card users-section">
+    <header class="card-header">
+      <div>
+        <h2>Registered Users</h2>
+        <p>Manage existing accounts across the requisition lifecycle.</p>
+      </div>
+    </header>
+    <div class="card-body">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Phone</th>
+              <th>Status</th>
+              <th *ngIf="isAdminRole()">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let user of users">
+              <td>
+                <div class="primary-text">{{ user.name }}</div>
+                <div class="secondary-text">{{ user.tehsil || user.department || '—' }}</div>
+              </td>
+              <td>{{ user.email }}</td>
+              <td>{{ user.role }}</td>
+              <td>{{ user.phone || '—' }}</td>
+              <td>
+                <span class="status-pill" [ngClass]="(user.activeStatus || 'Pending').toLowerCase()">{{ user.activeStatus || 'Pending' }}</span>
+              </td>
+              <td *ngIf="isAdminRole()" class="actions">
+                <button class="action-btn outline" (click)="openUpdateModal(user)">Update</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <div class="user-modal-overlay" *ngIf="showUpdateModal">
+    <div class="user-modal">
+      <div class="modal-header">
+        <span class="modal-title">Update User</span>
+        <button class="close-btn" type="button" (click)="closeUpdateModal()" aria-label="Close">&#10005;</button>
+      </div>
+      <app-user-update [user]="selectedUser" (close)="closeUpdateModal()"></app-user-update>
+    </div>
+  </div>
+</div>

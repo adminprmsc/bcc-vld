@@ -1,0 +1,255 @@
+<section class="support-center" [class.is-admin]="isAdmin()">
+  <header class="support-header">
+    <div>
+      <h1>Support Centre</h1>
+      <p>Report an issue or request guidance. All tickets route to the admin team for follow-up.</p>
+    </div>
+    <div class="support-meta">
+      <span class="role-pill">{{ currentRole() || 'User' }}</span>
+      <button type="button" class="refresh-btn" (click)="loadMyTickets()" [disabled]="loadingMine()">
+        {{ loadingMine() ? 'Refreshing…' : 'Refresh' }}
+      </button>
+    </div>
+  </header>
+
+  <div class="support-grid">
+    <aside class="support-card">
+      <h2>Raise a ticket</h2>
+      <form [formGroup]="ticketForm" (ngSubmit)="submitTicket()" novalidate>
+        <label class="form-field">
+          <span>Subject *</span>
+          <input type="text" formControlName="subject" placeholder="Example: Unable to approve requisition" />
+        </label>
+
+        <div class="form-row">
+          <label class="form-field">
+            <span>Category *</span>
+            <select formControlName="category">
+              <option *ngFor="let option of categories" [value]="option.value">{{ option.label }}</option>
+            </select>
+          </label>
+          <label class="form-field">
+            <span>Priority *</span>
+            <select formControlName="priority">
+              <option *ngFor="let option of priorities" [value]="option.value">{{ option.label }}</option>
+            </select>
+          </label>
+        </div>
+
+        <label class="form-field">
+          <span>Description *</span>
+          <textarea formControlName="message" rows="4" placeholder="Share steps, screenshots and the error shown"></textarea>
+        </label>
+
+        <label class="form-field">
+          <span>Attachments</span>
+          <input type="file" #attachmentInput multiple (change)="onAttachmentsSelected($event)" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx,.txt">
+          <small class="field-hint">Optional. Up to 5 files, max 8 MB each.</small>
+        </label>
+
+        <div class="selected-attachments" *ngIf="attachments().length">
+          <h3>Files to upload</h3>
+          <ul>
+            <li *ngFor="let file of attachments(); index as idx">
+              <span>{{ file.name }} <small>({{ formatBytes(file.size) }})</small></span>
+              <button type="button" (click)="removeAttachment(idx)">Remove</button>
+            </li>
+          </ul>
+        </div>
+
+        <button type="submit" class="primary" [disabled]="isSubmitting() || ticketForm.invalid">
+          {{ isSubmitting() ? 'Submitting…' : 'Submit ticket' }}
+        </button>
+      </form>
+    </aside>
+
+    <section class="support-card tickets">
+      <header class="card-header">
+        <div>
+          <h2>My tickets</h2>
+          <p>Your latest 200 requests ordered by most recent activity.</p>
+        </div>
+        <span class="count-chip">{{ myTickets().length }}</span>
+      </header>
+
+      <ng-container *ngIf="!loadingMine(); else loadingMineTpl">
+        <div *ngIf="myTickets().length; else emptyTickets" class="ticket-list">
+          <article *ngFor="let ticket of myTickets()" class="ticket-item">
+            <header>
+              <div>
+                <h3>{{ ticket.subject || ticket.category }}</h3>
+                <p class="ticket-meta">{{ ticket.ticketNumber }} • {{ ticket.createdAt | date: 'medium' }}</p>
+              </div>
+              <span class="status-pill" [attr.data-status]="ticket.status">{{ statusLabel(ticket.status) }}</span>
+            </header>
+            <p class="ticket-message">{{ ticket.message }}</p>
+            <section *ngIf="ticket.attachments?.length" class="ticket-attachments">
+              <h4>Attachments</h4>
+              <ul>
+                <li *ngFor="let attachment of ticket.attachments">
+                  <a [href]="attachmentUrl(attachment)" target="_blank" rel="noopener">{{ attachment.originalName }}</a>
+                  <span class="file-size">({{ formatBytes(attachment.size) }})</span>
+                </li>
+              </ul>
+            </section>
+            <footer>
+              <span>Priority: {{ ticket.priority | titlecase }}</span>
+              <span>Assigned to: {{ ticket.assignedTo?.name || 'Admin Team' }}</span>
+            </footer>
+
+            <section *ngIf="ticket.updates?.length" class="ticket-history">
+              <h4>Activity</h4>
+              <ul>
+                <li *ngFor="let update of ticket.updates">
+                  <span class="history-time">{{ update.createdAt | date: 'short' }}</span>
+                  <span class="history-body">
+                    {{ update.action }}
+                    <ng-container *ngIf="update.notes"> — {{ update.notes }}</ng-container>
+                    <span class="history-actor" *ngIf="update.actor?.name">
+                      · {{ update.actor?.name }}
+                    </span>
+                  </span>
+                </li>
+              </ul>
+            </section>
+          </article>
+        </div>
+      </ng-container>
+
+      <ng-template #emptyTickets>
+        <p class="empty">No support tickets submitted yet.</p>
+      </ng-template>
+      <ng-template #loadingMineTpl>
+        <p class="empty">Loading your tickets…</p>
+      </ng-template>
+    </section>
+  </div>
+
+  <section class="support-card admin-panel" *ngIf="isAdmin()">
+    <header class="card-header">
+      <div>
+        <h2>Open tickets</h2>
+        <p>All active requests awaiting resolution.</p>
+      </div>
+      <button type="button" class="refresh-btn" (click)="loadTeamTickets()" [disabled]="loadingTeam()">
+        {{ loadingTeam() ? 'Refreshing…' : 'Refresh' }}
+      </button>
+    </header>
+
+    <ng-container *ngIf="!loadingTeam(); else loadingTeamTpl">
+      <article *ngFor="let ticket of teamTickets()" class="admin-ticket">
+        <header class="admin-ticket-head">
+          <div>
+            <h3>{{ ticket.subject || ticket.category }}</h3>
+            <p>{{ ticket.ticketNumber }} • Raised {{ ticket.createdAt | date: 'medium' }} by {{ ticket.createdBy?.name || ticket.requesterName }}</p>
+          </div>
+          <select [value]="ticket.status" (change)="onStatusChange(ticket, $event)">
+            <option *ngFor="let status of statusOptions" [value]="status.value">{{ status.label }}</option>
+          </select>
+        </header>
+
+        <p class="ticket-message">{{ ticket.message }}</p>
+        <section *ngIf="ticket.attachments?.length" class="ticket-attachments">
+          <h4>Attachments</h4>
+          <ul>
+            <li *ngFor="let attachment of ticket.attachments">
+              <a [href]="attachmentUrl(attachment)" target="_blank" rel="noopener">{{ attachment.originalName }}</a>
+              <span class="file-size">({{ formatBytes(attachment.size) }})</span>
+            </li>
+          </ul>
+        </section>
+        <p class="ticket-meta">Priority: {{ ticket.priority | titlecase }} • Assigned to: {{ ticket.assignedTo?.name || 'Unassigned' }} • Contact: {{ ticket.requesterEmail }}</p>
+
+        <section *ngIf="ticket.updates?.length" class="ticket-history admin">
+          <h4>History</h4>
+          <ul>
+            <li *ngFor="let update of ticket.updates">
+              <span class="history-time">{{ update.createdAt | date: 'short' }}</span>
+              <span class="history-body">
+                {{ update.action }}
+                <ng-container *ngIf="update.notes"> — {{ update.notes }}</ng-container>
+                <span class="history-actor" *ngIf="update.actor?.name">
+                  · {{ update.actor?.name }}
+                </span>
+              </span>
+            </li>
+          </ul>
+        </section>
+
+        <div class="note-box">
+          <textarea #teamNote rows="2" placeholder="Add internal note for audit trail"></textarea>
+          <button type="button" (click)="addInternalNote(ticket, teamNote)">Post note</button>
+        </div>
+      </article>
+
+      <p *ngIf="!teamTickets().length" class="empty">No open tickets waiting on the team.</p>
+    </ng-container>
+    <ng-template #loadingTeamTpl>
+      <p class="empty">Loading open tickets…</p>
+    </ng-template>
+  </section>
+
+  <section class="support-card admin-panel" *ngIf="isAdmin()">
+    <header class="card-header">
+      <div>
+        <h2>Assigned to me</h2>
+        <p>Tickets auto-assigned to you. Update status as you triage.</p>
+      </div>
+      <button type="button" class="refresh-btn" (click)="loadAssignedTickets()" [disabled]="loadingAssigned()">
+        {{ loadingAssigned() ? 'Refreshing…' : 'Refresh' }}
+      </button>
+    </header>
+
+    <ng-container *ngIf="!loadingAssigned(); else loadingAssignedTpl">
+      <article *ngFor="let ticket of assignedTickets()" class="admin-ticket">
+        <header class="admin-ticket-head">
+          <div>
+            <h3>{{ ticket.subject || ticket.category }}</h3>
+            <p>{{ ticket.ticketNumber }} • Raised {{ ticket.createdAt | date: 'medium' }} by {{ ticket.createdBy?.name || ticket.requesterName }}</p>
+          </div>
+          <select [value]="ticket.status" (change)="onStatusChange(ticket, $event)">
+            <option *ngFor="let status of statusOptions" [value]="status.value">{{ status.label }}</option>
+          </select>
+        </header>
+
+        <p class="ticket-message">{{ ticket.message }}</p>
+        <section *ngIf="ticket.attachments?.length" class="ticket-attachments">
+          <h4>Attachments</h4>
+          <ul>
+            <li *ngFor="let attachment of ticket.attachments">
+              <a [href]="attachmentUrl(attachment)" target="_blank" rel="noopener">{{ attachment.originalName }}</a>
+              <span class="file-size">({{ formatBytes(attachment.size) }})</span>
+            </li>
+          </ul>
+        </section>
+  <p class="ticket-meta">Priority: {{ ticket.priority | titlecase }} • Status: {{ statusLabel(ticket.status) }} • Contact: {{ ticket.requesterEmail }}</p>
+
+        <section *ngIf="ticket.updates?.length" class="ticket-history admin">
+          <h4>History</h4>
+          <ul>
+            <li *ngFor="let update of ticket.updates">
+              <span class="history-time">{{ update.createdAt | date: 'short' }}</span>
+              <span class="history-body">
+                {{ update.action }}
+                <ng-container *ngIf="update.notes"> — {{ update.notes }}</ng-container>
+                <span class="history-actor" *ngIf="update.actor?.name">
+                  · {{ update.actor?.name }}
+                </span>
+              </span>
+            </li>
+          </ul>
+        </section>
+
+        <div class="note-box">
+          <textarea #note rows="2" placeholder="Add internal note for audit trail"></textarea>
+          <button type="button" (click)="addInternalNote(ticket, note)">Post note</button>
+        </div>
+      </article>
+
+      <p *ngIf="!assignedTickets().length" class="empty">No tickets are currently assigned to you.</p>
+    </ng-container>
+    <ng-template #loadingAssignedTpl>
+      <p class="empty">Loading assigned tickets…</p>
+    </ng-template>
+  </section>
+</section>
