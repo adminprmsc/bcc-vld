@@ -31,3 +31,8 @@ backend/.env
 /dist
 /out-tsc
 /.angular
+
+# Production secrets and SSL material
+.env
+deploy/nginx/ssl/*
+!deploy/nginx/ssl/.gitkeep

@@ -34,6 +34,11 @@ if (isProduction && !process.env.JWT_SECRET) {
 
 const app = express();
 
+// Trust reverse proxy (nginx) for rate limiting and client IP in production
+if (isProduction) {
+  app.set('trust proxy', 1);
+}
+
 // Security headers
 if (helmet) {
   app.use(helmet({
