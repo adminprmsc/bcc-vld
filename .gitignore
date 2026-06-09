@@ -12,7 +12,6 @@ backend/uploads/
 
 # Secrets & backups (never commit)
 .env
-deploy/nginx/ssl/*
 !deploy/nginx/ssl/.gitkeep
 backups/
 backups-from-server/
