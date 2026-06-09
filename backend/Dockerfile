@@ -1,32 +1,37 @@
-# Backend Dockerfile
-# Use bookworm-slim (not alpine) — avoids intermittent OpenSSL errors during npm ci on Docker Desktop/macOS
-FROM node:22-bookworm-slim AS base
+FROM node:22-bookworm-slim AS builder
+
+WORKDIR /app
+COPY package.json package-lock.json prisma.config.ts ./
+COPY prisma ./prisma
+RUN npm ci
+COPY nest-cli.json tsconfig.json ./
+COPY src ./src
+RUN npm run build
+
+FROM node:22-bookworm-slim
 
 ENV NODE_ENV=production
 
-RUN apt-get update && apt-get install -y --no-install-recommends dumb-init ca-certificates && \
-    rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends dumb-init ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-RUN groupadd -g 1001 nodejs && \
-    useradd -u 1001 -g nodejs -m nodejs
+RUN groupadd -g 1001 nodejs \
+  && useradd -u 1001 -g nodejs -m -s /usr/sbin/nologin nodejs
 
-COPY package*.json ./
-
+COPY package.json package-lock.json prisma.config.ts ./
+COPY prisma ./prisma
 RUN npm ci --omit=dev && npm cache clean --force
 
-COPY --chown=nodejs:nodejs . .
+COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 
-RUN mkdir -p uploads/mobile uploads/documents && \
-    chown -R nodejs:nodejs uploads
+RUN mkdir -p uploads && chown -R nodejs:nodejs uploads
 
 USER nodejs
-
 EXPOSE 3000
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
 
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["node", "./bin/www"]
+CMD ["node", "dist/src/main.js"]

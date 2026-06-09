@@ -1,0 +1,11 @@
+export declare const ROLE_RA = "RA Environment";
+export declare const ROLE_SAMPLER = "PCRWR Sampler";
+export declare const ROLE_LAB = "PCRWR Lab";
+export declare const RA_ROLES: Set<string>;
+export declare const PCRWR_SAMPLER_ROLES: Set<string>;
+export declare const PCRWR_LAB_ROLES: Set<string>;
+export declare const PCRWR_ROLES: Set<string>;
+export declare const MANAGER_ROLES: Set<string>;
+export declare const ALLOWED_UPLOAD_TYPES: Set<string>;
+export declare const MAX_UPLOAD_BYTES: number;
+export declare const MAX_UPLOAD_FILES = 5;

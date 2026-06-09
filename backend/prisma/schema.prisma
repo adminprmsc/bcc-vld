@@ -1,0 +1,596 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model access_requests {
+  id              BigInt                          @id @default(autoincrement())
+  name            String                         
+  email           String                         
+  phone           String                         
+  role_requested  access_requests_role_requested? @default(Citizen)
+  tehsil          String?                        
+  message         String?                        
+  status          access_requests_status?         @default(Pending)
+  processed_by    BigInt?                        
+  processed_at    DateTime?                      
+  processed_notes String?                        
+  created_at      DateTime                       
+  updated_at      DateTime                       
+  users           users?                          @relation(fields: [processed_by], references: [id], onDelete: Cascade)
+
+  @@index([created_at])
+  @@index([email])
+  @@index([status])
+  @@index([processed_by])
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model audit_logs {
+  id             BigInt             @id @default(autoincrement())
+  action         String            
+  entity_type    String            
+  entity_id      String?           
+  description    String?           
+  user_id        BigInt?           
+  user_name      String?           
+  user_email     String?           
+  user_role      String?           
+  ip_address     String?           
+  user_agent     String?           
+  request_method String?           
+  request_path   String?           
+  old_values     Json?
+  new_values     Json?
+  metadata       Json?
+  status         audit_logs_status? @default(success)
+  error_message  String?           
+  duration_ms    Int?              
+  session_id     String?           
+  created_at     DateTime          
+
+  @@index([action])
+  @@index([created_at])
+  @@index([entity_id])
+  @@index([entity_type])
+  @@index([entity_type, entity_id])
+  @@index([status])
+  @@index([user_id])
+  @@index([user_id, created_at])
+}
+
+model consultant_plan_attachments {
+  id                 BigInt           @id @default(autoincrement())
+  consultant_plan_id BigInt          
+  stored_name        String          
+  original_name      String?          @default("")
+  mime_type          String?          @default("")
+  size               BigInt?          @default(0)
+  created_at         DateTime        
+  updated_at         DateTime        
+  consultant_plans   consultant_plans @relation(fields: [consultant_plan_id], references: [id], onDelete: Cascade)
+
+  @@index([consultant_plan_id])
+}
+
+model consultant_plan_maintenance_records {
+  id                 BigInt                                      @id @default(autoincrement())
+  consultant_plan_id BigInt                                     
+  performed_at       DateTime                                   
+  type               consultant_plan_maintenance_records_type?   @default(preventive)
+  status             consultant_plan_maintenance_records_status? @default(completed)
+  description        String?                                    
+  cost               Decimal?                                    @default(0.00)
+  notes              String?                                    
+  recorded_by        BigInt?                                    
+  recorded_by_name   String?                                    
+  created_at         DateTime                                   
+  updated_at         DateTime                                   
+  consultant_plans   consultant_plans                            @relation(fields: [consultant_plan_id], references: [id], onDelete: Cascade)
+  users              users?                                      @relation(fields: [recorded_by], references: [id], onDelete: NoAction)
+
+  @@index([consultant_plan_id])
+  @@index([performed_at])
+  @@index([recorded_by])
+}
+
+model consultant_plans {
+  id                                       BigInt                                @id @default(autoincrement())
+  title                                    String                               
+  asset_type                               String                               
+  asset_label                              String                               
+  category                                 String                               
+  layer_name                               String?                               @default("PRMSC Red Book Assets")
+  description                              String?                              
+  requisition_id                           BigInt?                              
+  tehsil                                   String?                               @default("")
+  district                                 String?                               @default("")
+  feature_type                             String?                               @default("Feature")
+  feature_geometry                         Json
+  feature_properties                       Json?
+  attributes                               Json?
+  critical_flag                            Boolean?                              @default(false)
+  critical_reason                          String?                              
+  critical_marked_at                       DateTime?                            
+  critical_marked_by                       BigInt?                              
+  critical_marked_by_name                  String?                              
+  critical_acknowledged_at                 DateTime?                            
+  critical_acknowledged_by                 BigInt?                              
+  critical_acknowledged_by_name            String?                              
+  latest_quality_status_status             String?                               @default("normal")
+  latest_quality_status_score              Decimal?                             
+  latest_quality_status_label              String?                               @default("Normal")
+  latest_quality_status_updated_at         DateTime?                            
+  maintenance_owner_role                   String?                               @default("Tehsil Manager")
+  maintenance_owner                        BigInt?                              
+  maintenance_owner_name                   String?                              
+  created_by                               BigInt                               
+  updated_by                               BigInt?                              
+  created_at                               DateTime                             
+  updated_at                               DateTime                             
+  consultant_plan_attachments              consultant_plan_attachments[]
+  consultant_plan_maintenance_records      consultant_plan_maintenance_records[]
+  requisitions                             requisitions?                         @relation(fields: [requisition_id], references: [id], onDelete: Cascade)
+  users_consultant_plans_created_byTousers users                                 @relation("consultant_plans_created_byTousers", fields: [created_by], references: [id], onDelete: Cascade)
+  users_consultant_plans_updated_byTousers users?                                @relation("consultant_plans_updated_byTousers", fields: [updated_by], references: [id], onDelete: NoAction)
+  water_quality_samples                    water_quality_samples[]
+
+  @@index([category])
+  @@index([created_at])
+  @@index([critical_flag])
+  @@index([district])
+  @@index([tehsil])
+  @@index([created_by])
+  @@index([requisition_id])
+  @@index([updated_by])
+}
+
+model counters {
+  id          BigInt  @id @default(autoincrement())
+  counter_key String  @unique
+  seq         BigInt? @default(0)
+}
+
+model requisition_activity_logs {
+  id             BigInt       @id @default(autoincrement())
+  requisition_id BigInt      
+  action         String?     
+  user_id        BigInt?     
+  timestamp      DateTime?   
+  remarks        String?     
+  meta           Json?
+  requisitions   requisitions @relation(fields: [requisition_id], references: [id], onDelete: Cascade)
+  users          users?       @relation(fields: [user_id], references: [id], onDelete: NoAction)
+
+  @@index([requisition_id])
+  @@index([timestamp])
+  @@index([user_id])
+}
+
+model requisition_civil_structures {
+  id             BigInt       @id @default(autoincrement())
+  requisition_id BigInt      
+  name           String      
+  category       String?     
+  status         String?      @default("Planned")
+  description    String?     
+  attributes     Json?
+  photos         Json?
+  updated_by     BigInt?     
+  created_at     DateTime    
+  updated_at     DateTime    
+  requisitions   requisitions @relation(fields: [requisition_id], references: [id], onDelete: Cascade)
+  users          users?       @relation(fields: [updated_by], references: [id], onDelete: NoAction)
+
+  @@index([requisition_id])
+  @@index([updated_by])
+}
+
+model requisition_machinery {
+  id             BigInt       @id @default(autoincrement())
+  requisition_id BigInt      
+  name           String      
+  type           String?     
+  status         String?      @default("Idle")
+  capacity       String?     
+  manufacturer   String?     
+  attributes     Json?
+  photos         Json?
+  updated_by     BigInt?     
+  created_at     DateTime    
+  updated_at     DateTime    
+  requisitions   requisitions @relation(fields: [requisition_id], references: [id], onDelete: Cascade)
+  users          users?       @relation(fields: [updated_by], references: [id], onDelete: NoAction)
+
+  @@index([requisition_id])
+  @@index([updated_by])
+}
+
+model requisition_progress_updates {
+  id                    BigInt       @id @default(autoincrement())
+  requisition_id        BigInt      
+  status                String      
+  description           String?     
+  progress_date         DateTime?   
+  completion_percentage Int?        
+  attachments           Json?
+  updated_by            BigInt?     
+  created_at            DateTime    
+  updated_at            DateTime    
+  requisitions          requisitions @relation(fields: [requisition_id], references: [id], onDelete: Cascade)
+  users                 users?       @relation(fields: [updated_by], references: [id], onDelete: NoAction)
+
+  @@index([progress_date])
+  @@index([requisition_id])
+  @@index([updated_by])
+}
+
+model requisitions {
+  id                                     BigInt                              @id @default(autoincrement())
+  sequence_number                        Int?                                @unique
+  title                                  String                             
+  description                            String?                            
+  purpose                                String                             
+  division                               String?                             @default("")
+  district                               String?                             @default("")
+  tehsil                                 String                             
+  requested_by                           BigInt                             
+  assigned_to                            BigInt?                            
+  land_area                              String?                            
+  land_type                              String?                            
+  land_breadth                           Decimal?                            @default(0.0000)
+  land_depth                             Decimal?                            @default(0.0000)
+  calculated_area_sq_ft                  Decimal?                            @default(0.0000)
+  calculated_area_marlas                 Decimal?                            @default(0.0000)
+  calculated_area_kanals                 Decimal?                            @default(0.0000)
+  location_address                       String?                            
+  location_lat                           Decimal?                           
+  location_lng                           Decimal?                           
+  map_marker_lat                         Decimal?                           
+  map_marker_lng                         Decimal?                           
+  map_viewport_center_lat                Decimal?                           
+  map_viewport_center_lng                Decimal?                           
+  map_viewport_zoom                      Int?                                @default(0)
+  govt_land_checklist                    Json?
+  private_land_checklist                 Json?
+  map_features                           Json?
+  land_acquisition_type                  requisitions_land_acquisition_type?
+  land_acquisition_status                String?                             @default("")
+  land_acquisition_data                  Json?
+  land_acquisition_updated_by            BigInt?                            
+  land_acquisition_updated_at            DateTime?                          
+  land_utilization_phase                 String?                            
+  land_utilization_summary               String?                            
+  land_utilization_next_milestone        String?                            
+  land_utilization_gallery               Json?
+  land_utilization_updated_by            BigInt?                            
+  land_utilization_updated_at            DateTime?                          
+  required_date                          DateTime?                          
+  priority                               requisitions_priority?              @default(Medium)
+  supporting_docs                        Json?
+  status                                 String?                             @default("Pending")
+  estimated_value                        String?                            
+  remarks                                String?                            
+  attachments                            Json?
+  date_created                           DateTime?                          
+  last_updated                           DateTime?                          
+  consultant_plans                       consultant_plans[]
+  requisition_activity_logs              requisition_activity_logs[]
+  requisition_civil_structures           requisition_civil_structures[]
+  requisition_machinery                  requisition_machinery[]
+  requisition_progress_updates           requisition_progress_updates[]
+  users_requisitions_requested_byTousers users                               @relation("requisitions_requested_byTousers", fields: [requested_by], references: [id], onDelete: Cascade)
+  users_requisitions_assigned_toTousers  users?                              @relation("requisitions_assigned_toTousers", fields: [assigned_to], references: [id], onDelete: Cascade)
+
+  @@index([assigned_to])
+  @@index([date_created])
+  @@index([district])
+  @@index([requested_by])
+  @@index([status])
+  @@index([tehsil])
+}
+
+model support_request_attachments {
+  id                 BigInt           @id @default(autoincrement())
+  support_request_id BigInt          
+  stored_name        String          
+  original_name      String          
+  mime_type          String?         
+  size               BigInt?          @default(0)
+  created_at         DateTime        
+  updated_at         DateTime        
+  support_requests   support_requests @relation(fields: [support_request_id], references: [id], onDelete: Cascade)
+
+  @@index([support_request_id])
+}
+
+model support_request_updates {
+  id                 BigInt           @id @default(autoincrement())
+  support_request_id BigInt          
+  actor_id           BigInt          
+  action             String          
+  notes              String?         
+  created_at         DateTime        
+  updated_at         DateTime        
+  support_requests   support_requests @relation(fields: [support_request_id], references: [id], onDelete: Cascade)
+  users              users            @relation(fields: [actor_id], references: [id], onDelete: NoAction)
+
+  @@index([actor_id])
+  @@index([created_at])
+  @@index([support_request_id])
+}
+
+model support_requests {
+  id                                        BigInt                        @id @default(autoincrement())
+  ticket_number                             String                        @unique
+  created_by                                BigInt                       
+  requester_name                            String                       
+  requester_email                           String                       
+  requester_role                            String?                      
+  category                                  String                       
+  priority                                  support_requests_priority?    @default(medium)
+  subject                                   String?                      
+  message                                   String                       
+  status                                    support_requests_status?      @default(open)
+  resolution_notes                          String?                      
+  assigned_to                               BigInt?                      
+  created_at                                DateTime                     
+  updated_at                                DateTime                     
+  support_request_attachments               support_request_attachments[]
+  support_request_updates                   support_request_updates[]
+  users_support_requests_created_byTousers  users                         @relation("support_requests_created_byTousers", fields: [created_by], references: [id], onDelete: Cascade)
+  users_support_requests_assigned_toTousers users?                        @relation("support_requests_assigned_toTousers", fields: [assigned_to], references: [id], onDelete: NoAction)
+
+  @@index([assigned_to])
+  @@index([created_at])
+  @@index([created_by])
+  @@index([priority])
+  @@index([status])
+}
+
+model users {
+  id                                                                      BigInt                                @id @default(autoincrement())
+  simple_id                                                               Int?                                  @unique
+  name                                                                    String                               
+  email                                                                   String                                @unique
+  password                                                                String                               
+  role                                                                    users_role
+  gender                                                                  String?                              
+  cnic                                                                    String?                              
+  cnic_expiry                                                             String?                              
+  address                                                                 String?                              
+  dob                                                                     String?                              
+  phone                                                                   String?                              
+  active_status                                                           String?                               @default("inactive")
+  push_token                                                              String?                              
+  push_platform                                                           String?                              
+  push_device_name                                                        String?                              
+  push_token_updated_at                                                   DateTime?                            
+  created_at                                                              DateTime                             
+  updated_at                                                              DateTime                             
+  access_requests                                                         access_requests[]
+  consultant_plan_maintenance_records                                     consultant_plan_maintenance_records[]
+  consultant_plans_consultant_plans_created_byTousers                     consultant_plans[]                    @relation("consultant_plans_created_byTousers")
+  consultant_plans_consultant_plans_updated_byTousers                     consultant_plans[]                    @relation("consultant_plans_updated_byTousers")
+  requisition_activity_logs                                               requisition_activity_logs[]
+  requisition_civil_structures                                            requisition_civil_structures[]
+  requisition_machinery                                                   requisition_machinery[]
+  requisition_progress_updates                                            requisition_progress_updates[]
+  requisitions_requisitions_requested_byTousers                           requisitions[]                        @relation("requisitions_requested_byTousers")
+  requisitions_requisitions_assigned_toTousers                            requisitions[]                        @relation("requisitions_assigned_toTousers")
+  support_request_updates                                                 support_request_updates[]
+  support_requests_support_requests_created_byTousers                     support_requests[]                    @relation("support_requests_created_byTousers")
+  support_requests_support_requests_assigned_toTousers                    support_requests[]                    @relation("support_requests_assigned_toTousers")
+  water_quality_sample_status_history                                     water_quality_sample_status_history[]
+  water_quality_samples_water_quality_samples_assigned_samplerTousers     water_quality_samples[]               @relation("water_quality_samples_assigned_samplerTousers")
+  water_quality_samples_water_quality_samples_lab_analysis_analystTousers water_quality_samples[]               @relation("water_quality_samples_lab_analysis_analystTousers")
+  water_quality_samples_water_quality_samples_created_byTousers           water_quality_samples[]               @relation("water_quality_samples_created_byTousers")
+
+  @@index([active_status])
+  @@index([role])
+}
+
+model water_quality_sample_attachments {
+  id                    BigInt                                           @id @default(autoincrement())
+  sample_id             BigInt                                          
+  attachment_type       water_quality_sample_attachments_attachment_type
+  stored_name           String                                          
+  original_name         String?                                          @default("")
+  mime_type             String?                                          @default("")
+  size                  BigInt?                                          @default(0)
+  created_at            DateTime                                        
+  updated_at            DateTime                                        
+  water_quality_samples water_quality_samples                            @relation(fields: [sample_id], references: [id], onDelete: Cascade)
+
+  @@index([attachment_type])
+  @@index([sample_id])
+}
+
+model water_quality_sample_status_history {
+  id                    BigInt                                    @id @default(autoincrement())
+  sample_id             BigInt                                   
+  code                  water_quality_sample_status_history_code
+  label                 String                                   
+  note                  String?                                  
+  tone                  water_quality_sample_status_history_tone? @default(info)
+  created_by            BigInt                                   
+  created_by_name       String?                                  
+  created_at            DateTime                                 
+  updated_at            DateTime                                 
+  water_quality_samples water_quality_samples                     @relation(fields: [sample_id], references: [id], onDelete: Cascade)
+  users                 users                                     @relation(fields: [created_by], references: [id], onDelete: NoAction)
+
+  @@index([created_by])
+  @@index([created_at])
+  @@index([sample_id])
+}
+
+model water_quality_samples {
+  id                                                      BigInt                                @id @default(autoincrement())
+  plan_id                                                 BigInt                               
+  plan_snapshot_plan_id                                   BigInt                               
+  plan_snapshot_title                                     String?                               @default("")
+  plan_snapshot_category                                  String?                               @default("")
+  plan_snapshot_tehsil                                    String?                               @default("")
+  plan_snapshot_district                                  String?                               @default("")
+  status                                                  water_quality_samples_status?         @default(awaiting_assignment)
+  assigned_sampler                                        BigInt?                              
+  assigned_sampler_name                                   String?                              
+  assigned_at                                             DateTime?                            
+  collection_collected_at                                 DateTime?                            
+  collection_field_notes                                  String?                              
+  collection_location_lat                                 Decimal?                             
+  collection_location_lng                                 Decimal?                             
+  collection_collected_by                                 BigInt?                              
+  collection_collected_by_name                            String?                              
+  lab_analysis_received_at                                DateTime?                            
+  lab_analysis_completed_at                               DateTime?                            
+  lab_analysis_analyst                                    BigInt?                              
+  lab_analysis_analyst_name                               String?                              
+  lab_analysis_metrics                                    Json?
+  lab_analysis_notes                                      String?                              
+  computed_score_index_name                               String?                               @default("potability-index")
+  computed_score_value                                    Decimal?                             
+  computed_score_rating                                   String?                               @default("pending")
+  computed_score_updated_at                               DateTime?                            
+  created_by                                              BigInt                               
+  created_by_name                                         String?                              
+  updated_by                                              BigInt?                              
+  updated_by_name                                         String?                              
+  created_at                                              DateTime                             
+  updated_at                                              DateTime                             
+  water_quality_sample_attachments                        water_quality_sample_attachments[]
+  water_quality_sample_status_history                     water_quality_sample_status_history[]
+  consultant_plans                                        consultant_plans                      @relation(fields: [plan_id], references: [id], onDelete: Cascade)
+  users_water_quality_samples_assigned_samplerTousers     users?                                @relation("water_quality_samples_assigned_samplerTousers", fields: [assigned_sampler], references: [id], onDelete: NoAction)
+  users_water_quality_samples_lab_analysis_analystTousers users?                                @relation("water_quality_samples_lab_analysis_analystTousers", fields: [lab_analysis_analyst], references: [id], onDelete: NoAction)
+  users_water_quality_samples_created_byTousers           users                                 @relation("water_quality_samples_created_byTousers", fields: [created_by], references: [id], onDelete: Cascade)
+
+  @@index([assigned_sampler])
+  @@index([created_by])
+  @@index([lab_analysis_analyst])
+  @@index([created_at])
+  @@index([plan_id])
+  @@index([plan_snapshot_tehsil, status])
+  @@index([status])
+}
+
+enum water_quality_sample_attachments_attachment_type {
+  main
+  collection
+  lab_analysis
+}
+
+enum water_quality_sample_status_history_code {
+  critical_flagged
+  assignment
+  collection_started
+  collection_complete
+  in_lab
+  results_posted
+  closed
+  cancelled
+}
+
+enum consultant_plan_maintenance_records_type {
+  preventive
+  corrective
+  emergency
+  inspection
+}
+
+enum access_requests_role_requested {
+  Super_Admin        @map("Super Admin")
+  Admin
+  DM_Tehsil          @map("DM Tehsil")
+  Infra_Engineer     @map("Infra Engineer")
+  CID
+  BCC_Specialist     @map("BCC Specialist")
+  BCC_Officer_Tehsil @map("BCC Officer Tehsil")
+  Citizen
+  EDCS_Consultant    @map("EDCS Consultant")
+  EDCS_User          @map("EDCS User")
+  RA_Environment     @map("RA Environment")
+  PCRWR_Sampler      @map("PCRWR Sampler")
+  PCRWR_Lab          @map("PCRWR Lab")
+}
+
+enum consultant_plan_maintenance_records_status {
+  completed
+  pending
+  cancelled
+}
+
+enum users_role {
+  Super_Admin        @map("Super Admin")
+  Admin
+  DM_Tehsil          @map("DM Tehsil")
+  Infra_Engineer     @map("Infra Engineer")
+  CID
+  BCC_Specialist     @map("BCC Specialist")
+  BCC_Officer_Tehsil @map("BCC Officer Tehsil")
+  EDCS_Consultant    @map("EDCS Consultant")
+  EDCS_User          @map("EDCS User")
+  RA_Environment     @map("RA Environment")
+  PCRWR_Sampler      @map("PCRWR Sampler")
+  PCRWR_Lab          @map("PCRWR Lab")
+  Tehsil_Manager     @map("Tehsil Manager")
+  WB_User            @map("WB User")
+  Citizen
+}
+
+enum water_quality_sample_status_history_tone {
+  info
+  success
+  warning
+  critical
+}
+
+enum access_requests_status {
+  Pending
+  Approved
+  Rejected
+}
+
+enum support_requests_priority {
+  low
+  medium
+  high
+}
+
+enum water_quality_samples_status {
+  awaiting_assignment
+  awaiting_collection
+  collecting
+  in_lab
+  results_ready
+  closed
+  cancelled
+}
+
+enum support_requests_status {
+  open
+  in_progress
+  resolved
+  closed
+}
+
+enum audit_logs_status {
+  success
+  failure
+  warning
+}
+
+enum requisitions_land_acquisition_type {
+  Govt_Land    @map("Govt Land")
+  Private_Land @map("Private Land")
+}
+
+enum requisitions_priority {
+  Low
+  Medium
+  High
+}
