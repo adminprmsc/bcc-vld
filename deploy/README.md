@@ -52,7 +52,7 @@ cd backend
 cp .env.example .env
 ```
 
-Edit `backend/.env` — passwords must match root `.env`:
+Edit `backend/.env` — **MYSQL_PASSWORD must match root `.env`** (not production passwords):
 
 ```env
 NODE_ENV=development
@@ -61,10 +61,12 @@ MYSQL_HOST=127.0.0.1
 MYSQL_PORT=3306
 MYSQL_DATABASE=lds_db
 MYSQL_USER=lds_user
-MYSQL_PASSWORD=LocalDbPass123!       # same as root .env
-JWT_SECRET=your_jwt_from_root_env
+MYSQL_PASSWORD=LocalDbPass123!       # same as MYSQL_PASSWORD in root .env
+JWT_SECRET=local_dev_change_me_openssl_rand_hex_64
 ALLOWED_ORIGINS=http://localhost:4200,http://localhost:3000
 ```
+
+If you see `Access denied for user 'lds_user'@'172.22.0.1'` → wrong password in `backend/.env`.
 
 ```bash
 npm install
