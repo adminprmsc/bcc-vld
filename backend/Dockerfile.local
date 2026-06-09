@@ -1,5 +1,9 @@
-# Local Mac — backend built on host (deploy/local.sh), image only packages dist + runtime deps
+# syntax=docker/dockerfile:1
+# Host build (deploy/local.sh | deploy/production.sh) — dist from host; runtime deps from host or npm ci
+# COPY_NODE_MODULES=1 on Linux VM skips npm inside Docker (avoids ECONNRESET on weak networks)
+ARG COPY_NODE_MODULES=0
 FROM node:22-bookworm-slim
+ARG COPY_NODE_MODULES=0
 
 ENV NODE_ENV=production
 
@@ -14,7 +18,16 @@ RUN groupadd -g 1001 nodejs \
 
 COPY package.json package-lock.json prisma.config.ts ./
 COPY prisma ./prisma
-RUN npm ci --omit=dev && npm cache clean --force
+RUN --mount=type=bind,source=node_modules,target=/tmp/nm,readonly \
+    if [ "$COPY_NODE_MODULES" = "1" ]; then \
+      cp -a /tmp/nm ./node_modules; \
+    else \
+      npm config set fetch-retries 5 \
+      && npm config set fetch-retry-mintimeout 20000 \
+      && npm config set fetch-retry-maxtimeout 120000 \
+      && npm ci --omit=dev --maxsockets 3 \
+      && npm cache clean --force; \
+    fi
 
 COPY --chown=nodejs:nodejs dist ./dist
 

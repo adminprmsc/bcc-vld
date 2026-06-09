@@ -3,7 +3,10 @@ FROM node:22-bookworm-slim AS builder
 WORKDIR /app
 COPY package.json package-lock.json prisma.config.ts ./
 COPY prisma ./prisma
-RUN npm ci
+RUN npm config set fetch-retries 5 \
+  && npm config set fetch-retry-mintimeout 20000 \
+  && npm config set fetch-retry-maxtimeout 120000 \
+  && npm ci --maxsockets 3
 COPY nest-cli.json tsconfig.json ./
 COPY src ./src
 RUN npm run build
@@ -23,7 +26,9 @@ RUN groupadd -g 1001 nodejs \
 
 COPY package.json package-lock.json prisma.config.ts ./
 COPY prisma ./prisma
-RUN npm ci --omit=dev && npm cache clean --force
+RUN npm config set fetch-retries 5 \
+  && npm ci --omit=dev --maxsockets 3 \
+  && npm cache clean --force
 
 COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 

@@ -1,0 +1,9 @@
+# Host build — Mac local dev (npm ci still runs inside backend image for Linux deps)
+services:
+  backend:
+    build:
+      dockerfile: Dockerfile.local
+
+  frontend:
+    build:
+      dockerfile: Dockerfile.local
