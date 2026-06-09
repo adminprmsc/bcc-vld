@@ -1,10 +1,8 @@
-# Production Linux VM — host node_modules copied into image (no npm in Docker)
+# Production Linux VM — host build (deploy/production.sh); no npm in Docker
 services:
   backend:
     build:
-      dockerfile: Dockerfile.local
-      args:
-        COPY_NODE_MODULES: "1"
+      dockerfile: Dockerfile.production
 
   frontend:
     build:
