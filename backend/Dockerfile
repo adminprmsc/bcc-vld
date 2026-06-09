@@ -1,42 +1,37 @@
-# Backend Dockerfile
-FROM node:22-alpine AS base
+FROM node:22-bookworm-slim AS builder
 
-# Set production environment
+WORKDIR /app
+COPY package.json package-lock.json prisma.config.ts ./
+COPY prisma ./prisma
+RUN npm ci
+COPY nest-cli.json tsconfig.json ./
+COPY src ./src
+RUN npm run build
+
+FROM node:22-bookworm-slim
+
 ENV NODE_ENV=production
 
-# Install dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends dumb-init ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
 
-# Create app directory
 WORKDIR /app
 
-# Create non-root user for security
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
+RUN groupadd -g 1001 nodejs \
+  && useradd -u 1001 -g nodejs -m -s /usr/sbin/nologin nodejs
 
-# Copy package files
-COPY package*.json ./
-
-# Install production dependencies only
+COPY package.json package-lock.json prisma.config.ts ./
+COPY prisma ./prisma
 RUN npm ci --omit=dev && npm cache clean --force
 
-# Copy application code
-COPY --chown=nodejs:nodejs . .
+COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 
-# Create uploads directory
-RUN mkdir -p uploads/mobile uploads/documents && \
-    chown -R nodejs:nodejs uploads
+RUN mkdir -p uploads && chown -R nodejs:nodejs uploads
 
-# Switch to non-root user
 USER nodejs
-
-# Expose port
 EXPOSE 3000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
 
-# Start with dumb-init for proper signal handling
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["node", "./bin/www"]
+CMD ["node", "dist/src/main.js"]

@@ -1,5 +1,9 @@
 # Frontend Dockerfile - Multi-stage build
-FROM node:22-alpine AS builder
+# Use bookworm-slim (not alpine) — avoids intermittent OpenSSL errors during npm ci on Docker Desktop/macOS
+FROM node:22-bookworm-slim AS builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
