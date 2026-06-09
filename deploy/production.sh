@@ -50,8 +50,21 @@ backup() {
   log "Backup: ${dest}"
 }
 
+init() {
+  cd "$ROOT_DIR"
+  if [[ -f .env ]]; then
+    log ".env already exists — edit ${ROOT_DIR}/.env for production values"
+  else
+    [[ -f .env.production.example ]] || fail "Missing .env.production.example in repo root"
+    cp .env.production.example .env
+    log "Created ${ROOT_DIR}/.env from .env.production.example"
+  fi
+  log "Next: nano .env  (set JWT_SECRET, POSTGRES_PASSWORD, SEED_ADMIN_PASSWORD)"
+  log "Then:  ./deploy/production.sh deploy"
+}
+
 case "${1:-help}" in
-  init)    [[ -f .env ]] || cp .env.production.example .env; log "Edit .env then: ./deploy/production.sh deploy" ;;
+  init)    init ;;
   deploy)  deploy ;;
   migrate) migrate ;;
   seed)    seed "${2:-}" ;;
