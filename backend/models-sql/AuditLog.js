@@ -321,7 +321,7 @@ function getClientIp(req) {
 function sanitizeData(data) {
   if (!data) return null;
   
-  // Convert Mongoose documents or Sequelize instances to plain objects
+  // Convert ORM instances to plain objects
   if (typeof data.toJSON === 'function') {
     data = data.toJSON();
   } else if (typeof data.toObject === 'function') {

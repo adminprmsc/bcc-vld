@@ -1,5 +1,5 @@
-# Backend Dockerfile
-# Use bookworm-slim (not alpine) — avoids intermittent OpenSSL errors during npm ci on Docker Desktop/macOS
+# Local Mac builds — deps installed on host (avoids Docker Desktop npm SSL bug)
+# Use: ./deploy/local.sh build
 FROM node:22-bookworm-slim AS base
 
 ENV NODE_ENV=production
@@ -13,8 +13,7 @@ RUN groupadd -g 1001 nodejs && \
     useradd -u 1001 -g nodejs -m nodejs
 
 COPY package*.json ./
-
-RUN npm ci --omit=dev && npm cache clean --force
+COPY node_modules ./node_modules
 
 COPY --chown=nodejs:nodejs . .
 

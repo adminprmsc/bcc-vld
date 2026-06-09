@@ -7,6 +7,5 @@ uploads
 .git
 .gitignore
 *.md
-.mongo-backup
 coverage
 logs

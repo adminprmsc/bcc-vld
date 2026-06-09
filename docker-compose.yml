@@ -1,5 +1,5 @@
 # LDS Production Stack — MySQL + Backend + Frontend (nginx)
-# Usage: cp .env.example .env && docker compose up -d --build
+# Local: ./deploy/local.sh up  |  Production: ./deploy/production.sh deploy
 
 services:
   mysql:
@@ -24,6 +24,10 @@ services:
       - ./deploy/mysql/init:/docker-entrypoint-initdb.d:ro
     networks:
       - lds-internal
+    # Bound to localhost on the VM by default — use SSH tunnel for remote admin tools.
+    # Set MYSQL_BIND=0.0.0.0 in .env only if you must expose publicly (not recommended).
+    ports:
+      - "${MYSQL_BIND:-127.0.0.1}:${MYSQL_PORT:-3306}:3306"
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
       interval: 10s
@@ -51,6 +55,7 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost}
       AUDIT_READS: ${AUDIT_READS:-false}
+      SKIP_MIGRATIONS: "true"
     volumes:
       - uploads_data:/app/uploads
     networks:

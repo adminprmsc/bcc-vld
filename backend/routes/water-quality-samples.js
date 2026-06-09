@@ -870,7 +870,7 @@ function labelForRating(rating) {
 }
 
 /* ------------------------------------------------------------------ */
-/*  ID / validation helpers (replaces mongoose ObjectId checks)       */
+/*  ID / validation helpers                                            */
 /* ------------------------------------------------------------------ */
 
 function isValidId(value) {

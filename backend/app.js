@@ -8,7 +8,7 @@ const logger = require('morgan');
 const rateLimit = require('express-rate-limit');
 
 // MySQL / Sequelize
-const { sequelize, testConnection, syncDatabase } = require('./config/database');
+const { sequelize, testConnection } = require('./config/database');
 
 // Security middleware
 let helmet;
@@ -27,9 +27,17 @@ const auditLogsRouter = require('./routes/audit-logs');
 
 // Validate critical environment variables in production
 const isProduction = process.env.NODE_ENV === 'production';
-if (isProduction && !process.env.JWT_SECRET) {
-  console.error('FATAL: JWT_SECRET environment variable must be set in production');
-  process.exit(1);
+if (isProduction) {
+  if (!process.env.JWT_SECRET) {
+    console.error('FATAL: JWT_SECRET environment variable must be set in production');
+    process.exit(1);
+  }
+  const mysqlRequired = ['MYSQL_HOST', 'MYSQL_DATABASE', 'MYSQL_USER', 'MYSQL_PASSWORD'];
+  const mysqlMissing = mysqlRequired.filter((key) => !process.env[key]);
+  if (mysqlMissing.length) {
+    console.error(`FATAL: Missing MySQL environment variables: ${mysqlMissing.join(', ')}`);
+    process.exit(1);
+  }
 }
 
 const app = express();
@@ -86,16 +94,13 @@ const authLimiter = rateLimit({
 
 app.use(generalLimiter);
 
-// MySQL connection & schema sync
+// MySQL connection check (schema is applied via Sequelize migrations in bin/www)
 (async () => {
   try {
     const connected = await testConnection();
     if (!connected) {
       console.error('❌ Could not connect to MySQL. Server will start but DB queries will fail.');
-      return;
     }
-    // Sync schema (alter: true adds missing columns/tables without dropping data)
-    await syncDatabase({ alter: false });
   } catch (err) {
     console.error('MySQL initialisation error:', err.message);
   }

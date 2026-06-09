@@ -6,10 +6,11 @@
   "scripts": {
     "start": "node ./bin/www",
     "start:prod": "NODE_ENV=production node ./bin/www",
-    "reset:data": "node ./scripts/resetUsersAndRequisitions.js",
+    "seed:admin": "node ./scripts/seed-admin.js",
     "seed:water-users": "node ./scripts/seed-water-quality-users.js",
-    "migrate": "node ./scripts/migrate-mongodb-to-mysql.js",
-    "sync:db": "node -e \"require('dotenv').config(); require('./config/database').syncDatabase().then(() => process.exit(0)).catch(e => { console.error(e); process.exit(1); })\"",
+    "db:migrate": "node scripts/run-migrations.js",
+    "db:migrate:status": "node scripts/run-migrations.js status",
+    "db:migrate:generate": "sequelize-cli migration:generate",
     "health": "curl -s http://localhost:${PORT:-3000}/health || echo 'Server not running'"
   },
   "dependencies": {
@@ -24,7 +25,6 @@
     "helmet": "^7.1.0",
     "hpp": "^0.2.3",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.19.1",
     "morgan": "^1.10.1",
     "multer": "^2.0.2",
     "mysql2": "^3.18.1",

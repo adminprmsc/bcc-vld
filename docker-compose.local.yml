@@ -1,0 +1,10 @@
+# Local Mac override — used by ./deploy/local.sh
+
+services:
+  backend:
+    build:
+      dockerfile: Dockerfile.local
+
+  frontend:
+    build:
+      dockerfile: Dockerfile.local

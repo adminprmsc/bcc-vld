@@ -670,6 +670,8 @@ SupportRequestUpdate.belongsTo(User, { as: 'actor', foreignKey: 'actorId' });
 // SupportRequest Attachment associations
 SupportRequestAttachment.belongsTo(SupportRequest, { foreignKey: 'supportRequestId' });
 
+const AuditLog = require('./AuditLog');
+
 module.exports = {
   sequelize,
   Sequelize,
@@ -690,5 +692,6 @@ module.exports = {
   AccessRequest,
   SupportRequest,
   SupportRequestUpdate,
-  SupportRequestAttachment
+  SupportRequestAttachment,
+  AuditLog
 };
