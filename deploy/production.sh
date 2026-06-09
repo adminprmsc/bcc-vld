@@ -49,6 +49,8 @@ deploy() {
   wait_postgres
   migrate
   seed
+  log "Reload edge nginx (pick up new backend/frontend IPs)..."
+  "${COMPOSE[@]}" up -d --force-recreate nginx
   verify
 }
 

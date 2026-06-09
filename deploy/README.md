@@ -109,3 +109,4 @@ gunzip -c backups-from-server/20260609_120000/postgres.sql.gz | \
 | `npm ci` ECONNRESET in Docker on VM | Use `./deploy/production.sh deploy` (host build). Install Node 22 on VM. Do not run raw `docker compose up --build` |
 | `verify` says API unhealthy but backend healthy | Old `verify` required `curl` on the VM. `git pull` and re-run verify. Or test: `curl http://127.0.0.1/api/health` |
 | Stale `lds-mysql` container after migration | `docker stop lds-mysql && docker rm lds-mysql` (data is in Postgres now) |
+| `502 Bad Gateway` on `/api/health` but backend healthy | Stale nginx upstream IP — `docker compose -f docker-compose.yml -f docker-compose.production.yml up -d --force-recreate nginx` then `curl http://127.0.0.1/api/health` |
