@@ -107,3 +107,5 @@ gunzip -c backups-from-server/20260609_120000/postgres.sql.gz | \
 | `backend/.env` denied | Match `POSTGRES_PASSWORD` with root `.env` |
 | Fresh DB after MySQL migration | Remove old `mysql_data` volume; use new `postgres_data` |
 | `npm ci` ECONNRESET in Docker on VM | Use `./deploy/production.sh deploy` (host build). Install Node 22 on VM. Do not run raw `docker compose up --build` |
+| `verify` says API unhealthy but backend healthy | Old `verify` required `curl` on the VM. `git pull` and re-run verify. Or test: `curl http://127.0.0.1/api/health` |
+| Stale `lds-mysql` container after migration | `docker stop lds-mysql && docker rm lds-mysql` (data is in Postgres now) |

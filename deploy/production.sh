@@ -43,7 +43,7 @@ deploy() {
   allow_backend_node_modules_in_docker
   trap restore_backend_dockerignore EXIT
   log "Docker build & start..."
-  "${COMPOSE[@]}" up -d --build
+  "${COMPOSE[@]}" up -d --build --force-recreate
   restore_backend_dockerignore
   trap - EXIT
   wait_postgres
@@ -68,8 +68,27 @@ seed() {
 verify() {
   require_env
   "${COMPOSE[@]}" ps
-  curl -sf "http://localhost:${HTTP_PORT:-80}/api/health" | grep -q '"database":"connected"' \
-    || fail "API unhealthy"
+
+  local backend_health
+  backend_health=$("${COMPOSE[@]}" exec -T backend node -e \
+    "require('http').get('http://127.0.0.1:3000/health',(r)=>{let d='';r.on('data',c=>d+=c);r.on('end',()=>{process.stdout.write(d);process.exit(r.statusCode===200?0:1)})}).on('error',()=>process.exit(1))") \
+    || fail "Backend unhealthy (container not responding on :3000/health)"
+  echo "$backend_health" | grep -q '"database":"connected"' \
+    || fail "Backend DB not connected: ${backend_health}"
+
+  local port="${HTTP_PORT:-80}" url="http://127.0.0.1:${port}/api/health" via_nginx=""
+  if command -v curl >/dev/null 2>&1; then
+    via_nginx=$(curl -sf "$url" 2>/dev/null) || true
+  elif command -v wget >/dev/null 2>&1; then
+    via_nginx=$(wget -qO- "$url" 2>/dev/null) || true
+  fi
+  if [[ -n "$via_nginx" ]]; then
+    echo "$via_nginx" | grep -q '"database":"connected"' \
+      || fail "Edge nginx unhealthy at ${url} — run: ${COMPOSE[*]} logs nginx"
+  else
+    log "Note: install curl on VM to verify edge nginx (/api/health)"
+  fi
+
   log "OK"
 }
 
