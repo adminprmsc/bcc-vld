@@ -9,19 +9,43 @@ source "${DIR}/common.sh"
 COMPOSE=(docker compose -f docker-compose.yml -f docker-compose.production.yml)
 BACKUP_DIR="${BACKUP_DIR:-${ROOT_DIR}/backups}"
 
+BACKEND_DOCKERIGNORE_BAK=""
+
 build_on_host() {
   require_node
   log "Build backend on host (avoids npm network errors inside Docker)..."
   (cd "${ROOT_DIR}/backend" && npm ci && npm run build && npm prune --omit=dev)
+  [[ -d "${ROOT_DIR}/backend/node_modules" ]] || fail "backend/node_modules missing after host build"
   log "Build frontend on host..."
   (cd "${ROOT_DIR}/frontend" && npm ci && npm run build -- --configuration=production)
+}
+
+# node_modules is in .dockerignore by default; production image needs it from host
+allow_backend_node_modules_in_docker() {
+  local ignore="${ROOT_DIR}/backend/.dockerignore"
+  [[ -f "$ignore" ]] || return 0
+  grep -qx 'node_modules' "$ignore" || return 0
+  BACKEND_DOCKERIGNORE_BAK="${ignore}.deploybak"
+  cp "$ignore" "$BACKEND_DOCKERIGNORE_BAK"
+  grep -vx 'node_modules' "$ignore" > "${ignore}.tmp" && mv "${ignore}.tmp" "$ignore"
+}
+
+restore_backend_dockerignore() {
+  local ignore="${ROOT_DIR}/backend/.dockerignore"
+  [[ -n "$BACKEND_DOCKERIGNORE_BAK" && -f "$BACKEND_DOCKERIGNORE_BAK" ]] || return 0
+  mv "$BACKEND_DOCKERIGNORE_BAK" "$ignore"
+  BACKEND_DOCKERIGNORE_BAK=""
 }
 
 deploy() {
   require_env
   build_on_host
+  allow_backend_node_modules_in_docker
+  trap restore_backend_dockerignore EXIT
   log "Docker build & start..."
   "${COMPOSE[@]}" up -d --build
+  restore_backend_dockerignore
+  trap - EXIT
   wait_postgres
   migrate
   seed
