@@ -8,7 +8,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+RUN npm config set fetch-retries 5 \
+  && npm config set fetch-retry-mintimeout 20000 \
+  && npm config set fetch-retry-maxtimeout 120000 \
+  && npm ci --maxsockets 3
 
 COPY . .
 RUN npm run build -- --configuration=production

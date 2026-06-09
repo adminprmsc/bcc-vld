@@ -26,6 +26,13 @@ chmod +x deploy/local.sh deploy/production.sh
 
 ## Production
 
+**Prerequisite on VM:** Node.js 22 (host builds app; Docker only packages artifacts)
+
+```bash
+curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+apt-get install -y nodejs
+```
+
 ```bash
 ./deploy/production.sh init    # once: creates .env
 # edit .env — JWT_SECRET, POSTGRES_*, SEED_ADMIN_PASSWORD
@@ -35,7 +42,7 @@ chmod +x deploy/local.sh deploy/production.sh
 
 | Command | Does |
 |---------|------|
-| `deploy` | Build + migrate + seed + verify |
+| `deploy` | Host npm build + Docker start + migrate + seed + verify |
 | `migrate` | Apply migrations |
 | `seed` | Seed admin (`--reset` repairs password) |
 | `backup` | Snapshot to `./backups/` |
@@ -99,3 +106,4 @@ gunzip -c backups-from-server/20260609_120000/postgres.sql.gz | \
 | Login fails | `./deploy/local.sh seed --reset` |
 | `backend/.env` denied | Match `POSTGRES_PASSWORD` with root `.env` |
 | Fresh DB after MySQL migration | Remove old `mysql_data` volume; use new `postgres_data` |
+| `npm ci` ECONNRESET in Docker on VM | Use `./deploy/production.sh deploy` (host build). Install Node 22 on VM. Do not run raw `docker compose up --build` |

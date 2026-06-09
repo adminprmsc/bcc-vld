@@ -6,7 +6,7 @@ DIR="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck source=common.sh
 source "${DIR}/common.sh"
 
-COMPOSE=(docker compose -f docker-compose.yml -f docker-compose.local.yml)
+COMPOSE=(docker compose -f docker-compose.yml -f docker-compose.host-build.yml)
 
 up() {
   [[ -f .env ]] || cp .env.local.example .env

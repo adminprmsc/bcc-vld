@@ -1,9 +1,10 @@
-# Local Mac override — used by ./deploy/local.sh
-
+# Production Linux VM — host node_modules copied into image (no npm in Docker)
 services:
   backend:
     build:
       dockerfile: Dockerfile.local
+      args:
+        COPY_NODE_MODULES: "1"
 
   frontend:
     build:
